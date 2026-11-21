@@ -3,7 +3,6 @@
     <string name="entrance_subtitle">서브 텍스트</string>
     <string name="entrance_invite">초대 코드 입력하기</string>
     <string name="entrance_create_room">새로운 방 만들기</string>
-    <string name="entrance_invite_unavailable">초대 코드 입장은 아직 준비 중이에요.</string>
 
     <color name="entrance_background">#121212</color>
     <color name="entrance_gradient_top">#33FF652F</color>

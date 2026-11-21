@@ -5,8 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.ViewModelProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kr.co.cmc.hil.presentation.HilkkeumNavHost
+import kr.co.cmc.hil.presentation.room.RoomViewModel
 import kr.co.cmc.hil.ui.theme.HilkkeumTheme
 
 @AndroidEntryPoint
@@ -17,9 +19,10 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
+        val roomViewModel = ViewModelProvider(this)[RoomViewModel::class.java]
         setContent {
             HilkkeumTheme {
-                HilkkeumNavHost()
+                HilkkeumNavHost(roomViewModel)
             }
         }
     }

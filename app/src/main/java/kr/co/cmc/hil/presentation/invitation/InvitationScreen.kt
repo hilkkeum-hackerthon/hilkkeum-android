@@ -26,13 +26,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -68,20 +65,22 @@ private val InvitationFont = FontFamily(
 )
 
 @Composable
-fun InvitationScreen(onBack: () -> Unit, shareCode: String? = null) {
+fun InvitationScreen(
+    onBack: () -> Unit,
+    onJoin: (String) -> Unit = {},
+    shareCode: String? = null,
+    isSubmitting: Boolean = false,
+    waitingMessage: String? = null,
+) {
     var enteredCode by rememberSaveable { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     val clipboard = LocalClipboard.current
-    val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val copyLabel = stringResource(R.string.invitation_copy)
-    val emptyMessage = stringResource(R.string.invitation_hint)
-    val unavailable = stringResource(R.string.entrance_invite_unavailable)
     val submit: () -> Unit = {
-        keyboard?.hide()
-        scope.launch {
-            snackbar.currentSnackbarData?.dismiss()
-            snackbar.showSnackbar(if (enteredCode.isBlank()) emptyMessage else unavailable)
+        if (!isSubmitting) {
+            keyboard?.hide()
+            onJoin(enteredCode)
         }
     }
 
@@ -93,6 +92,8 @@ fun InvitationScreen(onBack: () -> Unit, shareCode: String? = null) {
         InvitationContent(
             shareCode = shareCode,
             enteredCode = enteredCode,
+            waitingMessage = waitingMessage,
+            isSubmitting = isSubmitting,
             onCodeChange = { enteredCode = it },
             onBack = onBack,
             onSubmit = submit,
@@ -104,7 +105,6 @@ fun InvitationScreen(onBack: () -> Unit, shareCode: String? = null) {
                 }
             },
         )
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).offset(y = (-32).dp))
     }
 }
 
@@ -112,6 +112,8 @@ fun InvitationScreen(onBack: () -> Unit, shareCode: String? = null) {
 private fun InvitationContent(
     shareCode: String?,
     enteredCode: String,
+    waitingMessage: String?,
+    isSubmitting: Boolean,
     onCodeChange: (String) -> Unit,
     onBack: () -> Unit,
     onSubmit: () -> Unit,
@@ -156,6 +158,16 @@ private fun InvitationContent(
                     modifier = Modifier.align(Alignment.TopCenter).offset(y = 236.dp * factor),
                 )
 
+                if (waitingMessage != null) {
+                    Text(
+                        text = waitingMessage,
+                        style = invitationTextStyle(14 * factor, FontWeight.Medium),
+                        color = colorResource(R.color.invitation_title),
+                        modifier = Modifier.align(Alignment.TopCenter)
+                            .offset(y = 393.dp * factor)
+                            .width(300.dp * factor),
+                    )
+                }
                 val fieldModifier = Modifier.align(Alignment.TopCenter).offset(y = 329.dp * factor)
                     .width(260.dp * factor).heightIn(min = 46.dp * factor)
                     .clip(controlShape).background(colorResource(R.color.invitation_field))
@@ -181,6 +193,7 @@ private fun InvitationContent(
                     InviteCodeField(enteredCode, onCodeChange, onSubmit, factor, fieldModifier)
                     Button(
                         onClick = onSubmit,
+                        enabled = !isSubmitting,
                         modifier = Modifier.align(Alignment.TopCenter).offset(y = 571.dp * factor)
                             .width(328.dp * factor).heightIn(min = 52.dp * factor),
                         shape = controlShape,
