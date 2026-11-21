@@ -1,4 +1,4 @@
-package kr.co.cmc.hil.domain.model
+package kr.co.cmc.hil.domain.model.room
 
 /**
  * 방 정보. 상대 입장 여부를 확인할 때 쓴다.

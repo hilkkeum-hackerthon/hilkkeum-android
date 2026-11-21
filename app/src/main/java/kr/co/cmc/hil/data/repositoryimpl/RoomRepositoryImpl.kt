@@ -15,10 +15,10 @@ import kr.co.cmc.hil.domain.common.AppError
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.common.map
 import kr.co.cmc.hil.domain.common.onSuccess
-import kr.co.cmc.hil.domain.model.CreatedRoom
-import kr.co.cmc.hil.domain.model.JoinedRoom
-import kr.co.cmc.hil.domain.model.Room
-import kr.co.cmc.hil.domain.model.RoomId
+import kr.co.cmc.hil.domain.model.room.CreatedRoom
+import kr.co.cmc.hil.domain.model.room.JoinedRoom
+import kr.co.cmc.hil.domain.model.room.Room
+import kr.co.cmc.hil.domain.model.room.RoomId
 import kr.co.cmc.hil.domain.repository.RoomRepository
 import javax.inject.Inject
 

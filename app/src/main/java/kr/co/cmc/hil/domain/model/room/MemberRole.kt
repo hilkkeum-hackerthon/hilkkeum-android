@@ -1,4 +1,4 @@
-package kr.co.cmc.hil.domain.model
+package kr.co.cmc.hil.domain.model.room
 
 enum class MemberRole {
     /** 방장 */

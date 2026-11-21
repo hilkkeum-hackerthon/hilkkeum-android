@@ -1,4 +1,4 @@
-package kr.co.cmc.hil.domain.model
+package kr.co.cmc.hil.domain.model.room
 
 /**
  * 방 생성 결과. 생성자는 방장(CREATOR)이다.

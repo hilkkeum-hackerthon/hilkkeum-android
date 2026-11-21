@@ -5,13 +5,13 @@ import kr.co.cmc.hil.data.dto.room.JoinRoomResponseDto
 import kr.co.cmc.hil.data.dto.room.MemberRoleDto
 import kr.co.cmc.hil.data.dto.room.RoomMemberDto
 import kr.co.cmc.hil.data.dto.room.RoomResponseDto
-import kr.co.cmc.hil.domain.model.CreatedRoom
-import kr.co.cmc.hil.domain.model.JoinedRoom
-import kr.co.cmc.hil.domain.model.MemberId
-import kr.co.cmc.hil.domain.model.MemberRole
-import kr.co.cmc.hil.domain.model.Room
-import kr.co.cmc.hil.domain.model.RoomId
-import kr.co.cmc.hil.domain.model.RoomMember
+import kr.co.cmc.hil.domain.model.room.CreatedRoom
+import kr.co.cmc.hil.domain.model.room.JoinedRoom
+import kr.co.cmc.hil.domain.model.room.MemberId
+import kr.co.cmc.hil.domain.model.room.MemberRole
+import kr.co.cmc.hil.domain.model.room.Room
+import kr.co.cmc.hil.domain.model.room.RoomId
+import kr.co.cmc.hil.domain.model.room.RoomMember
 
 fun CreateRoomResponseDto.toDomain(): CreatedRoom = CreatedRoom(
     roomId = RoomId(roomId),

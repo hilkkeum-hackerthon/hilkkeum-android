@@ -2,7 +2,7 @@ package kr.co.cmc.hil.domain.usecase.room
 
 import kr.co.cmc.hil.domain.common.AppError
 import kr.co.cmc.hil.domain.common.AppResult
-import kr.co.cmc.hil.domain.model.JoinedRoom
+import kr.co.cmc.hil.domain.model.room.JoinedRoom
 import kr.co.cmc.hil.domain.repository.RoomRepository
 
 /**
