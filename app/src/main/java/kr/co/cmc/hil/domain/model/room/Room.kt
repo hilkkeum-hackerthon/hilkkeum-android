@@ -7,6 +7,7 @@ data class Room(
     val roomId: RoomId,
     val memberCount: Int,
     val capacity: Int,
+    val currentGameId: Long? = null,
     val members: List<RoomMember>,
 ) {
     /** 두 명이 모두 입장했는지 여부 */

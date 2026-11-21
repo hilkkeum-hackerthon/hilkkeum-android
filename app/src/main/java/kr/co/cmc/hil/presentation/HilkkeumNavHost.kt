@@ -1,6 +1,5 @@
 package kr.co.cmc.hil.presentation
 
-import android.content.pm.ApplicationInfo
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,9 +16,6 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -33,6 +29,9 @@ import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
 import kr.co.cmc.hil.presentation.invitation.InvitationScreen
 import kr.co.cmc.hil.presentation.invitation.RoomEntryAction
 import kr.co.cmc.hil.presentation.invitation.RoomEntryViewModel
+import kr.co.cmc.hil.presentation.quest.GameSetupAction
+import kr.co.cmc.hil.presentation.quest.GameSetupEvent
+import kr.co.cmc.hil.presentation.quest.GameSetupViewModel
 import kr.co.cmc.hil.presentation.quest.QuestCountScreen
 import kr.co.cmc.hil.presentation.quest.QuestMode
 import kr.co.cmc.hil.presentation.quest.QuestModeScreen
@@ -68,13 +67,13 @@ internal object QuestModeRoute
 private data class QuestCountRoute(val mode: QuestMode)
 
 @Serializable
-private data class QuestSelectionRoute(val mode: QuestMode, val missionCount: Int)
+private data class QuestSelectionRoute(val gameId: Long, val missionCount: Int)
 
 @Serializable
-private data class QuestPenaltyRoute(val mode: QuestMode, val missionIds: List<Int>)
+private data class QuestPenaltyRoute(val gameId: Long, val missionIds: List<Int>)
 
 @Serializable
-private data class OperationWaitingRoute(val missionIds: List<Int>, val penaltyId: Int)
+private data class OperationWaitingRoute(val gameId: Long, val missionIds: List<Int>, val penaltyId: Int)
 
 @Serializable
 private data class OperationProgressRoute(val missionIds: List<Int>, val penaltyId: Int)
@@ -92,6 +91,7 @@ private const val MissionJudgementsKey = "missionJudgements"
 internal fun HilkkeumNavHost(
     wishCouponViewModel: WishCouponViewModel,
     roomEntryViewModel: RoomEntryViewModel,
+    gameSetupViewModel: GameSetupViewModel,
     onClose: () -> Unit,
 ) {
     val room by roomEntryViewModel.uiState.collectAsStateWithLifecycle()
@@ -104,8 +104,23 @@ internal fun HilkkeumNavHost(
         return
     }
     val navigation = rememberNavController()
-    val appFlags = LocalContext.current.applicationInfo.flags
-    val isDebuggable = (appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    val game by gameSetupViewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(navigation, gameSetupViewModel, context) {
+        gameSetupViewModel.event.collect { event ->
+            when (event) {
+                is GameSetupEvent.OpenSelection -> {
+                    if (navigation.currentDestination?.hasRoute<QuestCountRoute>() == true) {
+                        navigation.navigate(QuestSelectionRoute(event.gameId, event.count)) {
+                            popUpTo<QuestModeRoute> { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+                is GameSetupEvent.ShowMessage ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     LaunchedEffect(room.session, room.isPaired) {
         val destination = navigation.currentDestination
         if (room.session == null) {
@@ -181,36 +196,39 @@ internal fun HilkkeumNavHost(
         }
         composable<QuestCountRoute> { entry ->
             val mode = entry.toRoute<QuestCountRoute>().mode
-            QuestCountScreen(onNext = { count ->
-                navigation.navigate(QuestSelectionRoute(mode, count)) { launchSingleTop = true }
+            QuestCountScreen(isSubmitting = game.isLoading, onNext = { count ->
+                room.session?.let { gameSetupViewModel.onAction(GameSetupAction.Continue(it, mode, count)) }
             })
         }
         composable<QuestSelectionRoute> { entry ->
             val route = entry.toRoute<QuestSelectionRoute>()
             QuestSelectionScreen(missionCount = route.missionCount, onNext = { missionIds ->
-                navigation.navigate(QuestPenaltyRoute(route.mode, missionIds)) { launchSingleTop = true }
+                navigation.navigate(QuestPenaltyRoute(route.gameId, missionIds)) { launchSingleTop = true }
             })
         }
         composable<QuestPenaltyRoute> { entry ->
             val route = entry.toRoute<QuestPenaltyRoute>()
             QuestPenaltyScreen(onNext = { penaltyId ->
-                navigation.navigate(OperationWaitingRoute(route.missionIds, penaltyId)) {
+                navigation.navigate(OperationWaitingRoute(route.gameId, route.missionIds, penaltyId)) {
                     launchSingleTop = true
                 }
             })
         }
         composable<OperationWaitingRoute> { entry ->
             val route = entry.toRoute<OperationWaitingRoute>()
-            var isPartnerReady by rememberSaveable { mutableStateOf(false) }
+            LifecycleStartEffect(route.gameId) {
+                gameSetupViewModel.onAction(GameSetupAction.Observe(route.gameId))
+                onStopOrDispose { gameSetupViewModel.onAction(GameSetupAction.Observe(null)) }
+            }
             OperationWaitingScreen(
-                isPartnerReady = isPartnerReady,
+                isPartnerReady = game.playingGameId == route.gameId,
+                hasStatusError = game.hasStatusError,
                 onReady = {
                     navigation.navigate(OperationProgressRoute(route.missionIds, route.penaltyId)) {
                         popUpTo<OperationWaitingRoute> { inclusive = true }
                         launchSingleTop = true
                     }
                 },
-                onDebugConfirm = if (isDebuggable) ({ isPartnerReady = true }) else null,
             )
         }
         composable<OperationProgressRoute> { entry ->
