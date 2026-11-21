@@ -97,7 +97,6 @@ reviews:
         - Repository 구현체는 domain의 Repository 인터페이스를 구현하고, presentation을 참조하지 않는다.
         - DTO(Kotlin Serialization) / Room Entity와 도메인 모델을 분리하고, 변환은 Mapper에서만 수행.
           DTO나 Entity가 Repository 밖(domain/presentation)으로 새어 나가지 않는지 확인.
-        - 원격/로컬 접근은 `*DataSource`로 캡슐화.
         - 모든 실패는 `AppError`로 매핑해 반환. 단, CancellationException은 매핑하지 말고 재전파.
         - 비즈니스 정책 판단을 Repository에 넣지 않는다(I/O와 데이터 조합만 담당).
 
@@ -117,10 +116,6 @@ reviews:
         - DAO는 `suspend` 또는 `Flow` 반환으로 메인 스레드 쿼리를 피한다.
         - 스키마 변경 시 Migration을 추가하는지 확인. release에서 `fallbackToDestructiveMigration()`으로 데이터 유실이 없는지.
         - 여러 쓰기 작업은 `@Transaction`으로 묶는다.
-
-        [Flow]
-        - Flow를 반환하는 스트림은 취소와 생명주기를 고려. `flowOn`으로 업스트림 디스패처를 지정하고,
-          `catch` 연산자에서 CancellationException을 에러로 바꾸지 않는지 확인.
 
     # ───────────────────────── presentation 레이어 (MVI) ─────────────────────────
     - path: "**/presentation/**/*.kt"
@@ -147,8 +142,6 @@ reviews:
           Repository, DataSource, HttpClient, DAO를 ViewModel/Composable에서 직접 참조하면 계층 위반.
         - 비동기 작업은 `viewModelScope`에서만 실행.
         - Context, Activity, View, Composable 람다, NavController를 ViewModel 필드에 보관하면 메모리 누수로 지적.
-        - `stateIn` 사용 시 `SharingStarted.WhileSubscribed(5_000)` 등 생명주기를 고려한 정책인지 확인.
-        - 프로세스 재생성 후 복원해야 할 최소 상태는 `SavedStateHandle` 사용을 검토.
         - 비즈니스 정책/권한 판단은 UseCase·Policy로 위임하고 ViewModel/화면에 하드코딩하지 않는다.
 
         [Compose - RULES.md §9, §13]
