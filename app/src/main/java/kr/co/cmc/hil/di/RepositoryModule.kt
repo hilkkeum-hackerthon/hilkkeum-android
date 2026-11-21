@@ -5,7 +5,9 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kr.co.cmc.hil.data.repositoryimpl.RoomRepositoryImpl
+import kr.co.cmc.hil.data.repositoryimpl.SampleWishStampRepository
 import kr.co.cmc.hil.domain.repository.RoomRepository
+import kr.co.cmc.hil.domain.repository.WishStampRepository
 import javax.inject.Singleton
 
 /**
@@ -23,9 +25,12 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+internal abstract class RepositoryModule {
 
     @Binds
     @Singleton
     abstract fun bindRoomRepository(impl: RoomRepositoryImpl): RoomRepository
+
+    @Binds
+    abstract fun bindWishStampRepository(implementation: SampleWishStampRepository): WishStampRepository
 }
