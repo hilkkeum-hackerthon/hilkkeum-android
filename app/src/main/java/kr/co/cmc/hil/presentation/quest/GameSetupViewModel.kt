@@ -10,6 +10,7 @@ import kr.co.cmc.hil.R
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.model.game.DateType
 import kr.co.cmc.hil.domain.model.game.GameId
+import kr.co.cmc.hil.domain.model.game.GameStatus
 import kr.co.cmc.hil.domain.model.room.RoomSession
 import kr.co.cmc.hil.domain.usecase.game.CreateGameUseCase
 import kr.co.cmc.hil.domain.usecase.game.GetActiveGameIdUseCase
@@ -33,7 +34,6 @@ internal sealed interface GameSetupEvent {
 }
 
 private const val GameStatusPollIntervalMillis = 3_000L
-private const val PlayingStatus = "PLAYING"
 
 @HiltViewModel
 internal class GameSetupViewModel @Inject constructor(
@@ -81,7 +81,7 @@ internal class GameSetupViewModel @Inject constructor(
             when (val result = getGame(GameId(gameId))) {
                 is AppResult.Success -> updateState {
                     it.copy(
-                        playingGameId = gameId.takeIf { result.data.status == PlayingStatus },
+                        playingGameId = gameId.takeIf { result.data.status == GameStatus.PLAYING },
                         hasStatusError = false,
                     )
                 }
