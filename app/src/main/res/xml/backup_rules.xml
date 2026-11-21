@@ -6,8 +6,6 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- 회원 토큰은 다른 기기로 복원되지 않도록 백업에서 제외한다. (DataStoreModule.TOKEN_DATASTORE_NAME) -->
+    <exclude domain="file" path="datastore/token_storage.preferences_pb" />
 </full-backup-content>

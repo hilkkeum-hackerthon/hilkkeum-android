@@ -4,8 +4,11 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.data.repositoryimpl.RoomRepositoryImpl
 import kr.co.cmc.hil.data.repositoryimpl.SampleWishStampRepository
+import kr.co.cmc.hil.domain.repository.RoomRepository
 import kr.co.cmc.hil.domain.repository.WishStampRepository
+import javax.inject.Singleton
 
 /**
  * Repository 인터페이스(domain)와 구현체(data)를 연결한다.
@@ -23,6 +26,11 @@ import kr.co.cmc.hil.domain.repository.WishStampRepository
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindRoomRepository(impl: RoomRepositoryImpl): RoomRepository
+
     @Binds
     abstract fun bindWishStampRepository(implementation: SampleWishStampRepository): WishStampRepository
 }
