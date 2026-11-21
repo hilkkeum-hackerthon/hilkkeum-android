@@ -1,0 +1,16 @@
+<resources>
+    <string name="entrance_title">힐끔</string>
+    <string name="entrance_subtitle">서브 텍스트</string>
+    <string name="entrance_invite">초대 코드 입력하기</string>
+    <string name="entrance_create_room">새로운 방 만들기</string>
+    <string name="entrance_invite_unavailable">초대 코드 입장은 아직 준비 중이에요.</string>
+
+    <color name="entrance_background">#121212</color>
+    <color name="entrance_gradient_top">#33FF652F</color>
+    <color name="entrance_gradient_bottom">#33000000</color>
+    <color name="entrance_subtitle_text">#E85C2B</color>
+    <color name="entrance_create_background">#FF652F</color>
+    <color name="entrance_create_text">#000000</color>
+    <color name="entrance_invite_background">#ECECEC</color>
+    <color name="entrance_invite_text">#353535</color>
+</resources>
