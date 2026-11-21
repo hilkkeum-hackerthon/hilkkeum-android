@@ -1,6 +1,7 @@
 package kr.co.cmc.hil.presentation
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -117,7 +118,6 @@ internal fun HilkkeumNavHost(
     couponApprovalViewModel: CouponApprovalViewModel,
     roomEntryViewModel: RoomEntryViewModel,
     gameSetupViewModel: GameSetupViewModel,
-    onClose: () -> Unit,
 ) {
     val isHomePreview = BuildConfig.DEBUG && BuildConfig.BUILD_TYPE == "homePreview"
     val room by roomEntryViewModel.uiState.collectAsStateWithLifecycle()
@@ -266,8 +266,11 @@ internal fun HilkkeumNavHost(
                 }
                 val message = stringResource(room.statusError ?: R.string.room_waiting_for_partner)
                 if (session.inviteCode != null) {
+                    val leaveRoom = { roomEntryViewModel.onAction(RoomEntryAction.Leave) }
+                    // 상대가 들어오기 전 뒤로 가면 방을 삭제하고 첫 화면으로 돌아간다(세션이 비면 위의 LaunchedEffect가 이동).
+                    BackHandler(onBack = leaveRoom)
                     InvitationScreen(
-                        onBack = onClose,
+                        onBack = leaveRoom,
                         shareCode = session.inviteCode,
                         waitingMessage = message,
                     )

@@ -4,12 +4,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.auth.authProvider
 import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kr.co.cmc.hil.domain.model.room.RoomSession
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import kr.co.cmc.hil.data.datastore.withMemberToken
 import kr.co.cmc.hil.data.safeApiCall
 import kr.co.cmc.hil.data.datastore.TokenStorage
 import kr.co.cmc.hil.data.dto.room.CreateRoomResponseDto
@@ -60,6 +62,20 @@ class RoomRepositoryImpl @Inject constructor(
         return safeApiCall<RoomResponseDto> {
             httpClient.get("api/v1/rooms/${roomId.value}") { bearerAuth(token) }
         }.map { it.toDomain() }
+    }
+
+    /**
+     * `DELETE api/v1/rooms/{roomId}`(제안 엔드포인트)를 호출한 뒤 서버 결과와 상관없이 로컬 세션을 지운다.
+     * 서버에 엔드포인트가 없거나 네트워크가 끊겨도 사용자가 대기 화면에 갇히지 않게 하려는 처리다.
+     */
+    override suspend fun deleteRoom(roomId: RoomId): AppResult<Unit, AppError.Network> {
+        tokenStorage.withMemberToken { token ->
+            safeApiCall<Unit> {
+                httpClient.delete("api/v1/rooms/${roomId.value}") { bearerAuth(token) }
+            }
+        }
+
+        return clearSession()
     }
 
     override suspend fun restoreSession(): AppResult<RoomSession?, AppError.Network> =
