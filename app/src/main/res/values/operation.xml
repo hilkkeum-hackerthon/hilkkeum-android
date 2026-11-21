@@ -1,0 +1,38 @@
+<resources>
+    <string name="operation_waiting">상대방의 선택을 기다리고 있어요</string>
+    <string name="operation_debug_ready">테스트용 상대 설정 완료</string>
+    <string name="operation_title">작전 진행도</string>
+    <string name="operation_time_label">작전 종료까지</string>
+    <string name="operation_time">%1$d시 %2$02d분 %3$02d초</string>
+    <string name="operation_missions">내 미션</string>
+    <string name="operation_total">/%d</string>
+    <string name="operation_description">미션을 성공하셨다면 완료 버튼을 눌러\n진척도를 완성해주세요!</string>
+    <string name="operation_success">미션 성공</string>
+    <string name="operation_completed">완료</string>
+    <string name="operation_previous">이전 미션</string>
+    <string name="operation_next">다음 미션</string>
+    <string name="operation_penalty">내가 고른 벌칙</string>
+    <string name="operation_penalty_hint">연인이 당신에게</string>
+    <string name="operation_end">작전 종료하기</string>
+    <string-array name="operation_sample_missions">
+        <item>상대방에게 칭찬 세 가지를\n말해볼까요?</item>
+        <item>먼저 나서서\n손을 잡아볼까요?</item>
+        <item>오늘의 추억을 사진 한 장에\n남겨볼까요?</item>
+        <item>고마웠던 일을 한 가지\n이야기해볼까요?</item>
+        <item>상대가 좋아하는 노래를\n추천해볼까요?</item>
+        <item>함께 하고 싶은 일을\n한 가지 말해볼까요?</item>
+        <item>오늘 가장 즐거웠던 순간을\n공유해볼까요?</item>
+    </string-array>
+    <string-array name="operation_sample_penalties">
+        <item>상대가 고른 별명으로 하루 동안 불리기</item>
+        <item>다음 데이트의 간식 고르기</item>
+        <item>오늘의 패배 소감을 시상식처럼 말하기</item>
+        <item>상대에게 칭찬 세 가지 말하기</item>
+        <item>다음 데이트 장소를 추천하기</item>
+    </string-array>
+    <color name="operation_surface">#292929</color>
+    <color name="operation_arrow_surface">#363636</color>
+    <color name="operation_dim_text">#6E6E6E</color>
+    <color name="operation_idle_dot">#4A4A4A</color>
+    <color name="operation_orange_light">#FFB89F</color>
+</resources>

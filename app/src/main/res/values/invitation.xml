@@ -6,6 +6,7 @@
     <string name="invitation_join_body">공유받은 초대 코드를 입력해\n초대에 응해주세요!</string>
     <string name="invitation_share_body">미션 초대 코드를\n소중한 연인에게 공유해주세요!</string>
     <string name="invitation_hint">초대 코드를 입력해 주세요</string>
+    <string name="invitation_invalid_code">초대 코드를 다시 확인해 주세요.</string>
     <string name="invitation_submit">입력 완료</string>
     <string name="invitation_sample_code" translatable="false">CD3UDF</string>
 

@@ -1,0 +1,13 @@
+<resources>
+    <string name="mission_guess_title">작전 마무리</string>
+    <string name="mission_guess_heading">상대가 수행한 미션을 추리해보세요</string>
+    <string name="mission_guess_readonly">제출한 이후에는 수정할 수 없어요.</string>
+    <string name="mission_guess_field">미션 내용 %d</string>
+    <string name="mission_guess_hint">미션 내용을 입력해 주세요</string>
+    <string name="mission_guess_submit">제출하기</string>
+    <string name="mission_guess_submitted">제출 완료</string>
+    <string name="mission_guess_empty_confirmation">미션 추리 실패로 제출하시겠습니까?</string>
+    <string name="mission_guess_empty_body">입력하지 않은 미션은 추리 실패로 처리돼요.</string>
+    <string name="mission_guess_continue">계속 입력하기</string>
+    <string name="mission_guess_empty_answer">미션 추리 실패</string>
+</resources>
