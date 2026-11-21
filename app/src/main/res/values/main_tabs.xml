@@ -1,0 +1,5 @@
+<resources>
+    <color name="main_tab_track">#353535</color>
+    <color name="main_tab_home_idle">#4A4A4A</color>
+    <color name="main_tab_stamp_idle">#434343</color>
+</resources>

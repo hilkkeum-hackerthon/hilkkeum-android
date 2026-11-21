@@ -1,8 +1,11 @@
 package kr.co.cmc.hil.di
 
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.domain.repository.WishStampRepository
+import kr.co.cmc.hil.domain.usecase.GetWishStampProgressUseCase
 
 /**
  * UseCase 인스턴스를 제공한다.
@@ -18,6 +21,8 @@ import dagger.hilt.components.SingletonComponent
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object UseCaseModule {
-
+internal object UseCaseModule {
+    @Provides
+    fun provideGetWishStampProgressUseCase(repository: WishStampRepository): GetWishStampProgressUseCase =
+        GetWishStampProgressUseCase(repository)
 }

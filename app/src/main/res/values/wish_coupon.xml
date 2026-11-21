@@ -1,0 +1,24 @@
+<resources>
+    <string name="wish_coupon_title">소원권</string>
+    <string name="wish_coupon_help">소원권 이용 방법</string>
+    <string name="wish_coupon_help_body">스탬프 %d개를 모으면 소원권 1장이 생겨요. 소원권은 한 번에 1장까지 보유할 수 있어요.</string>
+    <string name="wish_coupon_close">닫기</string>
+    <string name="wish_coupon_stamp_label">스탬프 현황</string>
+    <string name="wish_coupon_stamp_count">%1$d/%2$d</string>
+    <string name="wish_coupon_available_label">사용 가능 소원권</string>
+    <string name="wish_coupon_available_count">%d장</string>
+    <string name="wish_coupon_start">시작!</string>
+    <string name="wish_coupon_ready">소원권 사용 가능</string>
+    <string name="wish_ticket_used">사용 완료</string>
+    <string name="wish_ticket_use">사용하기</string>
+    <string name="wish_ticket_body">원하는 어떤 소원도\n파트너에게 요청해 보세요.</string>
+    <string name="wish_ticket_period">%1$s~\n%2$s</string>
+    <string name="wish_ticket_close_icon" translatable="false">×</string>
+    <color name="wish_ticket_decoration">#E95729</color>
+    <string name="wish_coupon_slot" translatable="false">%02d</string>
+    <color name="wish_coupon_label">#ACACAC</color>
+    <color name="wish_coupon_value">#ECECEC</color>
+    <color name="wish_coupon_locked">#434343</color>
+    <color name="wish_coupon_button_disabled">#292929</color>
+    <color name="wish_coupon_background_end">#1D1D1D</color>
+</resources>

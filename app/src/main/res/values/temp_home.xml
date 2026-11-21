@@ -1,0 +1,10 @@
+<resources>
+    <string name="temp_home_help">이용 방법</string>
+    <string name="temp_home_envelope">미션 봉투</string>
+    <string name="temp_home_start">오늘 미션 시작하기</string>
+    <string name="temp_home_tab">홈</string>
+    <color name="temp_home_top">#BC8181</color>
+    <color name="temp_home_toolbar">#AFAFAF</color>
+    <color name="temp_home_bottom">#624343</color>
+    <color name="temp_home_placeholder">#D9D9D9</color>
+</resources>

@@ -5,12 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import kr.co.cmc.hil.presentation.HilkkeumNavHost
+import kr.co.cmc.hil.presentation.stamp.WishCouponViewModel
 import kr.co.cmc.hil.ui.theme.HilkkeumTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val wishCouponViewModel: WishCouponViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -19,7 +23,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             HilkkeumTheme {
-                HilkkeumNavHost()
+                HilkkeumNavHost(wishCouponViewModel)
             }
         }
     }

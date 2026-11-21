@@ -1,0 +1,8 @@
+<resources>
+    <string name="quest_count_title">수행할 미션 개수를 선택해 볼까요?</string>
+    <string name="quest_count_progress">퀘스트 설정 3단계 중 2단계</string>
+    <string name="quest_count_decrease">미션 개수 줄이기</string>
+    <string name="quest_count_increase">미션 개수 늘리기</string>
+    <string name="quest_count_value" translatable="false">%d</string>
+    <color name="quest_count_control">#868686</color>
+</resources>

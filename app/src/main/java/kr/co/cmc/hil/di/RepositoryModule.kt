@@ -1,8 +1,11 @@
 package kr.co.cmc.hil.di
 
+import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.data.repositoryimpl.SampleWishStampRepository
+import kr.co.cmc.hil.domain.repository.WishStampRepository
 
 /**
  * Repository 인터페이스(domain)와 구현체(data)를 연결한다.
@@ -19,6 +22,7 @@ import dagger.hilt.components.SingletonComponent
  */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
-
+internal abstract class RepositoryModule {
+    @Binds
+    abstract fun bindWishStampRepository(implementation: SampleWishStampRepository): WishStampRepository
 }

@@ -1,0 +1,10 @@
+<resources>
+    <string name="quest_penalty_title">미션 실패 벌칙을 정해주세요.</string>
+    <string name="quest_penalty_sample">벌칙 벌칙 벌칙\n벌칙벌칙</string>
+    <string name="quest_penalty_option">벌칙 옵션 %d</string>
+    <color name="quest_penalty_blue">#4664E8</color>
+    <color name="quest_penalty_green">#2DC27A</color>
+    <color name="quest_penalty_yellow">#E8BD00</color>
+    <color name="quest_penalty_gray">#6E6E6E</color>
+    <color name="quest_penalty_purple">#D780EF</color>
+</resources>
