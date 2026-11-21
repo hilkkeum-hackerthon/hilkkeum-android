@@ -1,0 +1,16 @@
+<resources>
+    <string name="invitation_back">뒤로</string>
+    <string name="invitation_copy">초대 코드 복사</string>
+    <string name="invitation_join_header">소중한 연인이 탐정님에게\n미션 초대장을 전송하셨나요?</string>
+    <string name="invitation_share_header">연인에게 초대장을 전송해\n미션을 시작해보세요.</string>
+    <string name="invitation_join_body">공유받은 초대 코드를 입력해\n초대에 응해주세요!</string>
+    <string name="invitation_share_body">미션 초대 코드를\n소중한 연인에게 공유해주세요!</string>
+    <string name="invitation_hint">초대 코드를 입력해 주세요</string>
+    <string name="invitation_submit">입력 완료</string>
+    <string name="invitation_sample_code" translatable="false">CD3UDF</string>
+
+    <color name="invitation_title">#FFFFFF</color>
+    <color name="invitation_field">#FAFAFA</color>
+    <color name="invitation_hint">#ACACAC</color>
+    <color name="invitation_card_light">#FFD000</color>
+</resources>
