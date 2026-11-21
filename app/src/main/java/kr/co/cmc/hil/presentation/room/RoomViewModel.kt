@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kr.co.cmc.hil.domain.common.AppError
+import kr.co.cmc.hil.domain.model.RoomError
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.model.RoomSession
 import kr.co.cmc.hil.domain.usecase.ManageRoomUseCase
@@ -35,17 +35,17 @@ class RoomViewModel @Inject constructor(private val rooms: ManageRoomUseCase) : 
         }
     }
 
-    private fun submit(request: suspend () -> AppResult<RoomSession>) {
+    private fun submit(request: suspend () -> AppResult<RoomSession, RoomError>) {
         if (!state.value.isSubmitting && session == null) {
             state.update { it.copy(isSubmitting = true, requestError = null) }
             viewModelScope.launch {
                 when (val result = request()) {
                     is AppResult.Success -> {
-                        val persistence = rooms.save(result.value)
-                        publishSession(result.value)
-                        state.update { it.copy(statusError = (persistence as? AppResult.Failure)?.error) }
+                        val persistence = rooms.save(result.data)
+                        publishSession(result.data)
+                        state.update { it.copy(statusError = (persistence as? AppResult.Error)?.error) }
                     }
-                    is AppResult.Failure -> state.update { it.copy(requestError = result.error) }
+                    is AppResult.Error -> state.update { it.copy(requestError = result.error) }
                 }
                 state.update { it.copy(isSubmitting = false) }
             }
@@ -61,14 +61,14 @@ class RoomViewModel @Inject constructor(private val rooms: ManageRoomUseCase) : 
                         is AppResult.Success -> {
                             state.update {
                                 it.copy(
-                                    isPaired = result.value.isPaired,
-                                    statusError = it.statusError.takeIf { error -> error == AppError.StorageError },
+                                    isPaired = result.data.isPaired,
+                                    statusError = it.statusError.takeIf { error -> error == RoomError.StorageError },
                                 )
                             }
-                            if (result.value.isPaired) break
+                            if (result.data.isPaired) break
                         }
-                        is AppResult.Failure -> {
-                            if (result.error in setOf(AppError.NotFound, AppError.Unauthorized, AppError.PermissionDenied)) {
+                        is AppResult.Error -> {
+                            if (result.error in setOf(RoomError.NotFound, RoomError.Unauthorized, RoomError.PermissionDenied)) {
                                 rooms.clear()
                                 publishSession(null)
                                 state.update { it.copy(requestError = result.error, statusError = null) }
@@ -99,8 +99,8 @@ class RoomViewModel @Inject constructor(private val rooms: ManageRoomUseCase) : 
     init {
         viewModelScope.launch {
             when (val restored = rooms.restore()) {
-                is AppResult.Success -> publishSession(restored.value)
-                is AppResult.Failure -> {
+                is AppResult.Success -> publishSession(restored.data)
+                is AppResult.Error -> {
                     rooms.clear()
                     state.update { it.copy(requestError = restored.error) }
                 }

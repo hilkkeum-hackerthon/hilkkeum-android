@@ -1,7 +1,7 @@
 package kr.co.cmc.hil.domain.usecase
 
 import kotlinx.coroutines.runBlocking
-import kr.co.cmc.hil.domain.common.AppError
+import kr.co.cmc.hil.domain.model.RoomError
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.model.RoomSession
 import kr.co.cmc.hil.domain.model.RoomStatus
@@ -18,7 +18,7 @@ class ManageRoomUseCaseTest {
         val repository = FakeRoomRepository()
         val rooms = ManageRoomUseCase(repository)
 
-        assertEquals(AppResult.Failure(AppError.ValidationFailed), rooms.join("ABC12"))
+        assertEquals(AppResult.Error(RoomError.ValidationFailed), rooms.join("ABC12"))
         assertNull(repository.joinedCode)
     }
 
@@ -44,15 +44,15 @@ class ManageRoomUseCaseTest {
         var joinedCode: String? = null
             private set
 
-        override suspend fun join(inviteCode: String): AppResult<RoomSession> {
+        override suspend fun join(inviteCode: String): AppResult<RoomSession, RoomError> {
             joinedCode = inviteCode
             return AppResult.Success(RoomSession(1, "fake-token", inviteCode, false))
         }
 
-        override suspend fun create(): AppResult<RoomSession> = error("Not used")
-        override suspend fun status(session: RoomSession): AppResult<RoomStatus> = error("Not used")
-        override suspend fun restore(): AppResult<RoomSession?> = error("Not used")
-        override suspend fun save(session: RoomSession): AppResult<Unit> = error("Not used")
-        override suspend fun clear(): AppResult<Unit> = error("Not used")
+        override suspend fun create(): AppResult<RoomSession, RoomError> = error("Not used")
+        override suspend fun status(session: RoomSession): AppResult<RoomStatus, RoomError> = error("Not used")
+        override suspend fun restore(): AppResult<RoomSession?, RoomError> = error("Not used")
+        override suspend fun save(session: RoomSession): AppResult<Unit, RoomError> = error("Not used")
+        override suspend fun clear(): AppResult<Unit, RoomError> = error("Not used")
     }
 }

@@ -1,6 +1,6 @@
 package kr.co.cmc.hil.presentation.room
 
-import kr.co.cmc.hil.domain.common.AppError
+import kr.co.cmc.hil.domain.model.RoomError
 
 data class RoomUiState(
     val isRestoring: Boolean = true,
@@ -9,6 +9,6 @@ data class RoomUiState(
     val inviteCode: String? = null,
     val isCreator: Boolean = false,
     val isPaired: Boolean = false,
-    val requestError: AppError? = null,
-    val statusError: AppError? = null,
+    val requestError: RoomError? = null,
+    val statusError: RoomError? = null,
 )

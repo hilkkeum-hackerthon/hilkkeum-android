@@ -10,7 +10,7 @@ import kr.co.cmc.hil.data.api.RoomHttpException
 import kr.co.cmc.hil.data.api.RoomRemoteDataSource
 import kr.co.cmc.hil.data.local.RoomSessionDataSource
 import kr.co.cmc.hil.data.mapper.toDomain
-import kr.co.cmc.hil.domain.common.AppError
+import kr.co.cmc.hil.domain.model.RoomError
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.model.RoomSession
 import kr.co.cmc.hil.domain.repository.RoomRepository
@@ -19,37 +19,37 @@ internal class RoomRepositoryImpl @Inject constructor(
     private val remote: RoomRemoteDataSource,
     private val local: RoomSessionDataSource,
 ) : RoomRepository {
-    private suspend fun <T> request(block: suspend () -> T): AppResult<T> = try {
+    private suspend fun <T> request(block: suspend () -> T): AppResult<T, RoomError> = try {
         AppResult.Success(block())
     } catch (error: CancellationException) {
         throw error
     } catch (error: MissingRoomServerException) {
-        AppResult.Failure(AppError.MissingServer)
+        AppResult.Error(RoomError.MissingServer)
     } catch (error: RoomHttpException) {
-        AppResult.Failure(
+        AppResult.Error(
             when (error.status) {
-                400 -> AppError.ValidationFailed
-                401 -> AppError.Unauthorized
-                403 -> AppError.PermissionDenied
-                404 -> AppError.NotFound
-                409 -> AppError.RoomFull
-                in 500..599 -> AppError.ServerError
-                else -> AppError.InvalidResponse
+                400 -> RoomError.ValidationFailed
+                401 -> RoomError.Unauthorized
+                403 -> RoomError.PermissionDenied
+                404 -> RoomError.NotFound
+                409 -> RoomError.RoomFull
+                in 500..599 -> RoomError.ServerError
+                else -> RoomError.InvalidResponse
             },
         )
     } catch (_: IOException) {
-        AppResult.Failure(AppError.NetworkError)
+        AppResult.Error(RoomError.NetworkError)
     } catch (_: Exception) {
-        AppResult.Failure(AppError.InvalidResponse)
+        AppResult.Error(RoomError.InvalidResponse)
     }
 
-    private suspend fun <T> storage(block: () -> T): AppResult<T> = withContext(Dispatchers.IO) {
+    private suspend fun <T> storage(block: () -> T): AppResult<T, RoomError> = withContext(Dispatchers.IO) {
         try {
             AppResult.Success(block())
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
-            AppResult.Failure(AppError.StorageError)
+            AppResult.Error(RoomError.StorageError)
         }
     }
 
