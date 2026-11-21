@@ -2,8 +2,10 @@ package kr.co.cmc.hil.data.mapper
 
 import kr.co.cmc.hil.data.dto.game.CreateGameResponseDto
 import kr.co.cmc.hil.data.dto.game.DateTypeDto
+import kr.co.cmc.hil.data.dto.game.GameResponseDto
 import kr.co.cmc.hil.domain.model.game.CreatedGame
 import kr.co.cmc.hil.domain.model.game.DateType
+import kr.co.cmc.hil.domain.model.game.Game
 import kr.co.cmc.hil.domain.model.game.GameId
 import kr.co.cmc.hil.domain.model.room.RoomId
 
@@ -15,6 +17,18 @@ fun CreateGameResponseDto.toDomain(): CreatedGame = CreatedGame(
     roomId = RoomId(roomId),
     dateType = dateType.toDomain(),
     missionCount = missionCount,
+)
+
+/**
+ * 게임 상태 조회 응답을 도메인 모델 [Game]으로 변환한다.
+ */
+fun GameResponseDto.toDomain(): Game = Game(
+    gameId = GameId(gameId),
+    dateType = dateType.toDomain(),
+    missionCount = missionCount,
+    mySelectionCompleted = mySelectionCompleted,
+    partnerSelectionCompleted = partnerSelectionCompleted,
+    endRequestPending = endRequestPending,
 )
 
 /**
