@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Hilkkeum" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Hilkkeum" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 스플래시와 같은 배경색으로 앱 시작 직후 흰 화면이 번쩍이지 않게 한다. -->
+        <item name="android:windowBackground">@color/entrance_background</item>
+    </style>
 </resources>
