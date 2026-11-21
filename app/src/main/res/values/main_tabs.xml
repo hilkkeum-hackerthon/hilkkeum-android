@@ -1,5 +1,4 @@
 <resources>
-    <string name="main_tab_stamp_pending">스탬프 화면은 준비 중이에요.</string>
     <color name="main_tab_track">#353535</color>
     <color name="main_tab_home_idle">#4A4A4A</color>
     <color name="main_tab_stamp_idle">#434343</color>

@@ -56,7 +56,7 @@ fun HomeStampToggle(
             onClick = onHome,
         )
         ToggleTab(
-            label = stringResource(R.string.temp_home_stamp),
+            label = stringResource(R.string.wish_coupon_title),
             icon = if (stampSelected) R.drawable.main_tab_stamp_selected else R.drawable.main_tab_stamp_idle,
             color = colorResource(if (stampSelected) R.color.entrance_create_text else R.color.main_tab_stamp_idle),
             background = if (stampSelected) active else Color.Transparent,
