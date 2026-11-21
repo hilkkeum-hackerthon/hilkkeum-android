@@ -44,7 +44,7 @@ description: "Task list for 힐끔 MVP Android client"
 |------|--------|-----------|---------|
 | **앱콩** | 도메인 (`main/domain/**`, `fake/**`) | 모델, Policy, Repository 인터페이스, 유스케이스와 그 단위 테스트. 화면 개발이 데이터 구현을 기다리지 않도록 **Fake Repository와 FakeServer**도 맡는다(도메인 계약을 실제로 실행해 보는 구현) | 42 |
 | **엠키** | 데이터 (`main/data/**`, `main/di/**`, `remote/**`, 빌드 설정) | Gradle, DTO, Retrofit 서비스(Spring·Node), 매퍼, Repository 구현, DataStore, 폴링, FCM과 그 테스트. 서버팀 소통 담당 | 45 |
-| **뭉뭉** | 프레젠테이션 (`main/presentation/**`, `res/**`, `MainActivity`) | Route·NavHost, 화면(Screen·Content·ViewModel·Action·Event·UiState), 문구, 접근성, ViewModel·UI 테스트 | 43 |
+| **뭉뭉** | 프레젠테이션 (`main/presentation/**`, `res/**`, `MainActivity`) | Route·NavHost, 화면(Screen·Content·ViewModel·Action·Event·UiState), 문구, 접근성, ViewModel·UI 테스트 | 41 |
 
 ### 병렬 작업 규칙: 계약 우선
 
@@ -62,7 +62,7 @@ description: "Task list for 힐끔 MVP Android client"
 | `remote/di/RemoteRepositoryModule.kt`, `main/di/**` | 엠키 | — |
 | `main/domain/repository/GameRepository.kt` | 앱콩 | 엠키는 구현체(`GameRepositoryImpl.kt`)만 고친다. 시그니처를 바꿔야 하면 앱콩에게 요청한다 |
 | `main/presentation/navigation/**`, `res/values/strings.xml` | 뭉뭉 | — |
-| `app/src/main/AndroidManifest.xml` | 엠키 | 딥링크(T128 계열)는 뭉뭉이 엠키와 조율한 뒤 추가한다 |
+| `app/src/main/AndroidManifest.xml` | 엠키 | 딥링크(T126 계열)는 뭉뭉이 엠키와 조율한 뒤 추가한다 |
 
 ### 동기화 지점
 
@@ -364,46 +364,36 @@ description: "Task list for 힐끔 MVP Android client"
 
 ---
 
-## Phase 7: User Story 5 - 결산과 동점 가위바위보 (Priority: P1)
+## Phase 7: User Story 5 - 결산 (Priority: P1)
 
-**Goal**: 두 기기에 같은 점수·승패·승자 벌칙이 표시된다. 동점이면 승자가 나올 때까지 가위바위보를 반복한다.
+**Goal**: 두 기기에 같은 점수·승패·승자 벌칙이 표시된다.
 
-**Independent Test**: quickstart.md E2E 5단계. 40 대 35로 A 승리, 동점이면 가위바위보, 비기면 다시 한다.
+**Independent Test**: quickstart.md E2E 5단계. 40 대 35로 A 승리.
 
 **👥 담당**:
 
 | 담당 | 작업 |
 |------|------|
-| 앱콩 (도메인) | T090, T091, T092, T096, T100 |
+| 앱콩 (도메인) | T090, T091, T092, T096, T099 |
 | 엠키 (데이터) | T093, T094, T095 |
-| 뭉뭉 (프레젠테이션) | T097, T098, T099, T101 |
+| 뭉뭉 (프레젠테이션) | T097, T098 |
 
 > **계약 우선**: 앱콩의 T090·T091·T092·T091이 먼저 들어간다. 이 단계가 끝나면 MVP 데모를 할 수 있다. 세 사람이 함께 fake 변형으로 한 판을 끝까지 돌려 본다.
 
 - [ ] T090 [P] [US5] 모델을 만든다.
-  - `main/domain/model/Settlement.kt`: decidedBy, winner, myScore, partnerScore, penalty, reveal?(⚠️G5), 파생 속성 isMyWin
-  - `main/domain/model/RpsChoice.kt`
-  - `main/domain/model/TieBreakState.kt`: `Waiting` / `Draw` / `Decided`
+  - `main/domain/model/Settlement.kt`: winner, myScore, partnerScore, penalty, reveal?(⚠️G5), 파생 속성 isMyWin
 - [ ] T091 [P] [US5] `main/domain/policy/ScorePolicy.kt`를 만든다: `performedCount × 15 + correctGuessCount × 10` (FR-035).
-- [ ] T092 [US5] `main/domain/repository/GameRepository.kt`에 `getResult()`, `submitRpsMove(choice)`, `observeRpsResult(roundNo)` 시그니처를 추가한다. `fake/data/fake/FakeGameRepository.kt`에 Fake 동작을 구현한다(점수 계산, 동점, 비김, 파트너 선택 트리거).
-- [ ] T093 [P] [US5] DTO를 만든다: `main/data/dto/game/GameResultResponseDto.kt`(⚠️G5 필드는 nullable), `RpsMoveRequestDto.kt`, `RpsMoveResponseDto.kt`, `RpsResultResponseDto.kt`.
-- [ ] T094 [US5] `main/data/api/NodeApiService.kt`에 API 16–18을 추가한다.
-- [ ] T095 [US5] `main/data/repositoryimpl/GameRepositoryImpl.kt`에 다음을 구현한다.
-  - `getResult()`
-  - `submitRpsMove(choice)`: 409는 이미 제출한 것으로 보고 다시 조회
-  - `observeRpsResult(roundNo)`: 2초 폴링, `DRAW`나 `DECIDED`이면 멈춤
-- [ ] T096 [P] [US5] 유스케이스를 `main/domain/usecase/game/` 아래에 만든다: `GetResultUseCase.kt`, `SubmitRpsMoveUseCase.kt`, `ObserveRpsResultUseCase.kt`.
-- [ ] T097 [US5] `main/presentation/round/tiebreak/`에 TieBreak 화면 5개 파일을 만든다(FR-040~042).
-  - 가위·바위·보 선택 → 제출 → '상대 선택 대기'
-  - `DRAW`면 양측 선택을 2초 보여준 뒤 `nextRoundNo`로 다시 선택
-  - `DECIDED`면 결산 조회
-- [ ] T098 [US5] `main/presentation/round/settlement/`에 Settlement 화면 5개 파일을 만든다(FR-036~039).
+- [ ] T092 [US5] `main/domain/repository/GameRepository.kt`에 `getResult()` 시그니처를 추가한다. `fake/data/fake/FakeGameRepository.kt`에 Fake 동작을 구현한다(점수 계산).
+- [ ] T093 [P] [US5] DTO를 만든다: `main/data/dto/game/GameResultResponseDto.kt`(⚠️G5 필드는 nullable).
+- [ ] T094 [US5] `main/data/api/NodeApiService.kt`에 API 16을 추가한다.
+- [ ] T095 [US5] `main/data/repositoryimpl/GameRepositoryImpl.kt`에 `getResult()`를 구현한다.
+- [ ] T096 [P] [US5] 유스케이스를 `main/domain/usecase/game/` 아래에 만든다: `GetResultUseCase.kt`.
+- [ ] T097 [US5] `main/presentation/round/settlement/`에 Settlement 화면 5개 파일을 만든다(FR-036~039).
   - 승패, 양측 점수, 공개 벌칙(승자가 고른 것) 표시. reveal이 있으면 미션·추리·O/X 목록도 표시
   - 이긴 경우 스탬프 반영 안내
   - '대기실로' 버튼
-- [ ] T099 [P] [US5] `res/values/strings.xml`에 US5 문구를 추가한다: 승리/패배, 점수, 벌칙 안내, 가위/바위/보, 비김, 상대 선택 대기, 스탬프 +1.
-- [ ] T100 [P] [US5] `test/domain/policy/ScorePolicyTest.kt`: 미션 1·2·3개의 최고점 25/50/75점, 스펙 예시 40 대 35, 0점을 확인한다.
-- [ ] T101 [P] [US5] `test/presentation/round/tiebreak/TieBreakViewModelTest.kt`: `WAITING` → `DRAW` → 다음 회차 초기화 → `DECIDED` 시 결산 이동 event를 확인한다.
+- [ ] T098 [P] [US5] `res/values/strings.xml`에 US5 문구를 추가한다: 승리/패배, 점수, 벌칙 안내, 스탬프 +1.
+- [ ] T099 [P] [US5] `test/domain/policy/ScorePolicyTest.kt`: 미션 1·2·3개의 최고점 25/50/75점, 스펙 예시 40 대 35, 0점을 확인한다.
 
 **Checkpoint**: fake 변형에서 한 라운드 전체(US1–US5)를 끝까지 진행할 수 있다. **← MVP 데모 가능**
 
@@ -419,47 +409,47 @@ description: "Task list for 힐끔 MVP Android client"
 
 | 담당 | 작업 |
 |------|------|
-| 앱콩 (도메인) | T102, T103, T108, T109, T116 |
-| 엠키 (데이터) | T104, T105, T106, T107, T117 |
-| 뭉뭉 (프레젠테이션) | T110, T111, T112, T113, T114, T115 |
+| 앱콩 (도메인) | T100, T101, T106, T107, T114 |
+| 엠키 (데이터) | T102, T103, T104, T105, T115 |
+| 뭉뭉 (프레젠테이션) | T108, T109, T110, T111, T112, T113 |
 
-> US3–US5와 일부 병렬로 진행할 수 있다. 앱콩은 US5 계약을 마친 뒤 곧바로 T102·T103·T109·T103을 머지한다. 엠키는 Spring 소원권 API, 뭉뭉은 스탬프·소원권 화면을 맡는다.
+> US3–US5와 일부 병렬로 진행할 수 있다. 앱콩은 US5 계약을 마친 뒤 곧바로 T100·T101·T107·T101을 머지한다. 엠키는 Spring 소원권 API, 뭉뭉은 스탬프·소원권 화면을 맡는다.
 
-- [X] T102 [P] [US6] 모델을 만든다. ✅ 구현: 기존 `domain/model/stamp/Stamps.kt`(isFull·showFullWarning 추가), `coupon/CouponStatus.kt`·`Coupon.kt`, 신규 `IncomingCouponRequest.kt`
+- [X] T100 [P] [US6] 모델을 만든다. ✅ 구현: 기존 `domain/model/stamp/Stamps.kt`(isFull·showFullWarning 추가), `coupon/CouponStatus.kt`·`Coupon.kt`, 신규 `IncomingCouponRequest.kt`
   - `main/domain/model/StampStatus.kt`: heartCount, maxHearts, canExchange, hasActiveCoupon, 파생 속성 showFullWarning
   - `main/domain/model/CouponStatus.kt`: `AVAILABLE` / `PENDING` / `USED`
   - `main/domain/model/WishCoupon.kt`, `main/domain/model/IncomingCouponRequest.kt`
-- [X] T103 [P] [US6] `main/domain/repository/StampRepository.kt`(`observeStampStatus()`)와 `main/domain/repository/CouponRepository.kt`를 만든다. ✅ 구현: 기존 `StampRepository`/`CouponRepository`(suspend 조회 방식 유지)에 `getIncomingCouponRequest()`(⚠️G8) 추가. 폴링은 ViewModel에서 수행
+- [X] T101 [P] [US6] `main/domain/repository/StampRepository.kt`(`observeStampStatus()`)와 `main/domain/repository/CouponRepository.kt`를 만든다. ✅ 구현: 기존 `StampRepository`/`CouponRepository`(suspend 조회 방식 유지)에 `getIncomingCouponRequest()`(⚠️G8) 추가. 폴링은 ViewModel에서 수행
   - `CouponRepository`: `observeMyCoupon()`, `exchange()`, `requestUse(id)`, `observeIncomingRequest()`(⚠️G8), `respond(id, approved)`
-- [X] T104 [P] [US6] DTO를 만든다. ✅ 구현: 기존 `data/dto/coupon/*`, `dto/stamp/*` 재사용 + `IncomingCouponResponseDto.kt` 추가
+- [X] T102 [P] [US6] DTO를 만든다. ✅ 구현: 기존 `data/dto/coupon/*`, `dto/stamp/*` 재사용 + `IncomingCouponResponseDto.kt` 추가
   - `main/data/dto/reward/StampStatusResponseDto.kt`, `CouponExchangeResponseDto.kt`, `CouponResponseDto.kt`
   - `main/data/dto/reward/CouponUseRequestResponseDto.kt`, `CouponRespondRequestDto.kt`, `CouponRespondResponseDto.kt`
   - `main/data/dto/reward/IncomingCouponResponseDto.kt` (⚠️G8 제안 형식)
-- [X] T105 [US6] `main/data/api/SpringApiService.kt`에 API 19, 21–24와 ⚠️G8 제안 엔드포인트 `GET /api/v1/coupons/incoming`을 추가한다. ✅ 구현: Retrofit 서비스 대신 Ktor로 `CouponRepositoryImpl`에서 직접 호출. G8 `GET api/v1/coupons/incoming` 추가(404면 요청 없음으로 처리)
-- [X] T106 [P] [US6] `main/data/mapper/RewardMapper.kt`를 만든다. 시각은 `OffsetDateTime`으로 파싱하고, `remainingDays`는 서버 값을 그대로 쓴다. ✅ 구현: 기존 `CouponMapper.kt`/`StampMapper.kt`에 G8 매퍼 추가
-- [X] T107 [US6] `main/data/repositoryimpl/StampRepositoryImpl.kt`와 `main/data/repositoryimpl/CouponRepositoryImpl.kt`를 만든다. ✅ 구현: Repository 구현 완료. 3초(승인 대기)/5초(받은 요청) 폴링과 409 사유 문구 매핑은 `WishCouponViewModel`이 담당. DI는 `di/RepositoryModule.kt`
+- [X] T103 [US6] `main/data/api/SpringApiService.kt`에 API 19, 21–24와 ⚠️G8 제안 엔드포인트 `GET /api/v1/coupons/incoming`을 추가한다. ✅ 구현: Retrofit 서비스 대신 Ktor로 `CouponRepositoryImpl`에서 직접 호출. G8 `GET api/v1/coupons/incoming` 추가(404면 요청 없음으로 처리)
+- [X] T104 [P] [US6] `main/data/mapper/RewardMapper.kt`를 만든다. 시각은 `OffsetDateTime`으로 파싱하고, `remainingDays`는 서버 값을 그대로 쓴다. ✅ 구현: 기존 `CouponMapper.kt`/`StampMapper.kt`에 G8 매퍼 추가
+- [X] T105 [US6] `main/data/repositoryimpl/StampRepositoryImpl.kt`와 `main/data/repositoryimpl/CouponRepositoryImpl.kt`를 만든다. ✅ 구현: Repository 구현 완료. 3초(승인 대기)/5초(받은 요청) 폴링과 409 사유 문구 매핑은 `WishCouponViewModel`이 담당. DI는 `di/RepositoryModule.kt`
   - 승인 대기 중에는 `observeMyCoupon`을 3초 폴링하고, `observeIncomingRequest`는 5초 폴링한다
   - 409 사유를 `COUPON_HELD`, `COUPON_PENDING`으로 바꾼다
   - `remote/di/RemoteRepositoryModule.kt`에 바인딩을 추가한다
-- [ ] T108 [P] [US6] `fake/data/fake/FakeStampRepository.kt`와 `fake/data/fake/FakeCouponRepository.kt`를 만든다. ⏸️ 보류: 프로젝트에 `fake` 빌드 변형이 없어 미구현. 단위 테스트의 Fake Repository로 대체 검증
+- [ ] T106 [P] [US6] `fake/data/fake/FakeStampRepository.kt`와 `fake/data/fake/FakeCouponRepository.kt`를 만든다. ⏸️ 보류: 프로젝트에 `fake` 빌드 변형이 없어 미구현. 단위 테스트의 Fake Repository로 대체 검증
   - `FakeServer`에서 승리하면 스탬프가 쌓이게 연동
   - 파트너의 승인·거절과 파트너 쪽 사용 요청을 트리거할 수 있게 한다
   - `fake/di/FakeRepositoryModule.kt`에 바인딩을 추가한다
-- [X] T109 [P] [US6] 유스케이스를 `main/domain/usecase/reward/` 아래에 만든다: `ObserveStampStatusUseCase.kt`, `ObserveCouponUseCase.kt`, `ExchangeCouponUseCase.kt`, `RequestCouponUseUseCase.kt`, `ObserveIncomingCouponRequestUseCase.kt`, `RespondCouponUseCase.kt`. ✅ 구현: `domain/usecase/coupon/`의 기존 유스케이스 + `GetIncomingCouponRequestUseCase.kt` (`di/UseCaseModule.kt`)
-- [X] T110 [US6] `main/presentation/stamp/`에 Stamp 화면 5개 파일을 만든다. 대기실의 스탬프 탭에 들어가는 내용이다(FR-043~047). ✅ 구현: `presentation/stamp/WishCoupon{Screen,ViewModel,Action,Event,UiState}.kt` — 기존 UI를 실제 API에 연결, 샘플 데이터 제거
+- [X] T107 [P] [US6] 유스케이스를 `main/domain/usecase/reward/` 아래에 만든다: `ObserveStampStatusUseCase.kt`, `ObserveCouponUseCase.kt`, `ExchangeCouponUseCase.kt`, `RequestCouponUseUseCase.kt`, `ObserveIncomingCouponRequestUseCase.kt`, `RespondCouponUseCase.kt`. ✅ 구현: `domain/usecase/coupon/`의 기존 유스케이스 + `GetIncomingCouponRequestUseCase.kt` (`di/UseCaseModule.kt`)
+- [X] T108 [US6] `main/presentation/stamp/`에 Stamp 화면 5개 파일을 만든다. 대기실의 스탬프 탭에 들어가는 내용이다(FR-043~047). ✅ 구현: `presentation/stamp/WishCoupon{Screen,ViewModel,Action,Event,UiState}.kt` — 기존 UI를 실제 API에 연결, 샘플 데이터 제거
   - 스탬프 n/3, 교환 버튼(canExchange일 때 활성)
   - 소원권과 D-day, 사용 버튼(`AVAILABLE`일 때 활성), `PENDING`이면 '승인 대기'
   - 스탬프가 가득 찬 경우의 경고 문구
-- [X] T111 [US6] `main/presentation/coupon/use/`에 CouponUse 화면 5개 파일을 만든다(FR-048). 사용 확인 → 요청 → 처리 중·완료(승인 대기)·실패와 재시도 상태를 보여준다. ✅ 구현: 별도 화면 대신 `presentation/stamp/WishTicketDialog.kt`가 사용 확인→요청 중→승인 대기/실패·다시 시도를 표시
-- [X] T112 [US6] `main/presentation/coupon/approval/`에 CouponApproval 화면 5개 파일을 만든다(FR-048a). 받은 요청에 승인/거절으로 응답하고 결과를 안내한다. ✅ 구현: `presentation/coupon/approval/CouponApproval*` 5개 파일
-- [X] T113 [US6] `main/presentation/lobby/LobbyScreen.kt`와 `LobbyViewModel.kt`를 고친다. ✅ 구현: 대기실 = `TemporaryHomeScreen`: 받은 요청 배너(`presentation/common/CouponRequestBanner.kt`), `HilkkeumNavHost`에 `CouponApprovalRoute` 연결, 홈·스탬프 화면 표시 중에만 폴링
+- [X] T109 [US6] `main/presentation/coupon/use/`에 CouponUse 화면 5개 파일을 만든다(FR-048). 사용 확인 → 요청 → 처리 중·완료(승인 대기)·실패와 재시도 상태를 보여준다. ✅ 구현: 별도 화면 대신 `presentation/stamp/WishTicketDialog.kt`가 사용 확인→요청 중→승인 대기/실패·다시 시도를 표시
+- [X] T110 [US6] `main/presentation/coupon/approval/`에 CouponApproval 화면 5개 파일을 만든다(FR-048a). 받은 요청에 승인/거절으로 응답하고 결과를 안내한다. ✅ 구현: `presentation/coupon/approval/CouponApproval*` 5개 파일
+- [X] T111 [US6] `main/presentation/lobby/LobbyScreen.kt`와 `LobbyViewModel.kt`를 고친다. ✅ 구현: 대기실 = `TemporaryHomeScreen`: 받은 요청 배너(`presentation/common/CouponRequestBanner.kt`), `HilkkeumNavHost`에 `CouponApprovalRoute` 연결, 홈·스탬프 화면 표시 중에만 폴링
   - 스탬프 탭에 Stamp 화면 내용을 연결
   - 받은 소원권 요청이 있으면 배너를 표시하고, 누르면 `CouponApprovalRoute`로 이동
   - `main/presentation/navigation/HilNavHost.kt`에 Coupon 라우트 2개를 연결
-- [X] T114 [US6] `main/presentation/round/settlement/SettlementViewModel.kt`를 고친다. 결산을 확인한 뒤 `ObserveStampStatusUseCase`를 다시 조회해 n/3을 반영한다. ✅ 구현: 결산 화면(`OperationResultScreen`) 종료 시 스탬프 화면으로 이동하며 `Refresh`로 n/3 재조회
-- [X] T115 [P] [US6] `res/values/strings.xml`에 US6 문구를 추가한다: 스탬프 n/3, 교환, 소원권, D-%d, 사용, 승인 대기, 승인/거절, 가득 참 경고, 사용 완료, 거절됨. ✅ 구현: `res/values/wish_coupon.xml`, `res/values/coupon_approval.xml`
-- [X] T116 [P] [US6] `test/domain/model/StampStatusTest.kt`: `showFullWarning` 진리표와 `canExchange` 표시 조건을 확인한다. ✅ 구현: `test/.../domain/model/stamp/StampsTest.kt`
-- [X] T117 [P] [US6] `test/data/repositoryimpl/CouponRepositoryImplTest.kt`: MockWebServer에 `docs/API명세서.md` 21–24번 응답 예시를 넣고 확인한다. ✅ 구현: `test/.../data/repositoryimpl/CouponRepositoryImplTest.kt` (Ktor MockEngine). ViewModel 테스트 2종도 추가
+- [X] T112 [US6] `main/presentation/round/settlement/SettlementViewModel.kt`를 고친다. 결산을 확인한 뒤 `ObserveStampStatusUseCase`를 다시 조회해 n/3을 반영한다. ✅ 구현: 결산 화면(`OperationResultScreen`) 종료 시 스탬프 화면으로 이동하며 `Refresh`로 n/3 재조회
+- [X] T113 [P] [US6] `res/values/strings.xml`에 US6 문구를 추가한다: 스탬프 n/3, 교환, 소원권, D-%d, 사용, 승인 대기, 승인/거절, 가득 참 경고, 사용 완료, 거절됨. ✅ 구현: `res/values/wish_coupon.xml`, `res/values/coupon_approval.xml`
+- [X] T114 [P] [US6] `test/domain/model/StampStatusTest.kt`: `showFullWarning` 진리표와 `canExchange` 표시 조건을 확인한다. ✅ 구현: `test/.../domain/model/stamp/StampsTest.kt`
+- [X] T115 [P] [US6] `test/data/repositoryimpl/CouponRepositoryImplTest.kt`: MockWebServer에 `docs/API명세서.md` 21–24번 응답 예시를 넣고 확인한다. ✅ 구현: `test/.../data/repositoryimpl/CouponRepositoryImplTest.kt` (Ktor MockEngine). ViewModel 테스트 2종도 추가
   - 상태 전이 `AVAILABLE` → `PENDING` → `USED`, 거절 시 `AVAILABLE`
   - 409 사유 매핑
   - `coupon: null`인 응답
@@ -480,13 +470,13 @@ description: "Task list for 힐끔 MVP Android client"
 |------|------|
 | 앱콩 (도메인) | — |
 | 엠키 (데이터) | — |
-| 뭉뭉 (프레젠테이션) | T118, T119, T120 |
+| 뭉뭉 (프레젠테이션) | T116, T117, T118 |
 
 > 화면 전용 단계라 뭉뭉만 작업한다. US6 화면 사이사이에 진행한다.
 
-- [X] T118 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙. ✅ 구현: `res/values/howto.xml` (미션·관찰·추리·채점과 점수 15/10점·벌칙·스탬프와 소원권)
-- [X] T119 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다. ✅ 구현: `presentation/howto/HowToScreen.kt` (Screen + private Content, ViewModel 생략, 뒤로 가기 버튼)
-- [X] T120 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다. ✅ 구현: `HilkkeumNavHost`에 `HowToRoute` 연결. 대기실(`TemporaryHomeScreen`)의 ? 아이콘이 기존 인라인 도움말 대신 이용 방법 화면으로 이동
+- [X] T116 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙. ✅ 구현: `res/values/howto.xml` (미션·관찰·추리·채점과 점수 15/10점·벌칙·스탬프와 소원권)
+- [X] T117 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다. ✅ 구현: `presentation/howto/HowToScreen.kt` (Screen + private Content, ViewModel 생략, 뒤로 가기 버튼)
+- [X] T118 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다. ✅ 구현: `HilkkeumNavHost`에 `HowToRoute` 연결. 대기실(`TemporaryHomeScreen`)의 ? 아이콘이 기존 인라인 도움말 대신 이용 방법 화면으로 이동
 
 ---
 
@@ -498,28 +488,28 @@ description: "Task list for 힐끔 MVP Android client"
 
 | 담당 | 작업 |
 |------|------|
-| 앱콩 (도메인) | T121, T130 |
-| 엠키 (데이터) | T125, T126, T129 |
-| 뭉뭉 (프레젠테이션) | T122, T123, T124, T127, T128 |
+| 앱콩 (도메인) | T119, T128 |
+| 엠키 (데이터) | T123, T124, T127 |
+| 뭉뭉 (프레젠테이션) | T120, T121, T122, T125, T126 |
 
-> 앱콩은 T121(Fake 디버그 패널, FakeServer 연동)과 T130(quickstart 전체 검증)를 주도한다. T124는 세 사람이 기기 2대로 함께 수행한다.
+> 앱콩은 T119(Fake 디버그 패널, FakeServer 연동)과 T128(quickstart 전체 검증)를 주도한다. T122는 세 사람이 기기 2대로 함께 수행한다.
 
-- [ ] T121 [P] `fake/presentation/debug/FakePartnerPanel.kt`를 만든다. fake 변형에서만 보이는 디버그 오버레이로, 파트너 입장·선택 완료·종료 요청/응답·추리·채점·가위바위보·소원권 승인/거절을 버튼으로 실행한다(research R12).
-- [ ] T122 `main/presentation/lobby/LobbyViewModel.kt`를 고친다. `CANCELLED` phase를 받으면 취소 안내 event를 한 번 내보내고, 방장의 '미션 시작'을 다시 활성화한다(FR-052b, ⚠️G12 서버 반영 전에는 fake에서만 확인).
-- [ ] T123 [P] `androidTest/flow/FullRoundFlowTest.kt`를 만든다. Fake Repository를 주입한 Compose UI 테스트로, 방 생성 → 설정 → 종료 동의 → 추리 → 채점 → 결산 흐름을 확인한다.
-- [ ] T124 [P] 모든 화면에 접근성을 점검한다: contentDescription, 최소 48dp 터치 영역, 큰 글꼴에서의 레이아웃, 다크 모드 토큰(`main/ui/theme/Color.kt`, `Theme.kt`).
-- [ ] T125 [P] 로그를 점검한다. 토큰과 미션·추리 텍스트가 로그에 남지 않아야 하고, 로깅 인터셉터가 release 빌드에서 꺼져 있어야 한다. 대상은 `main/di/NetworkModule.kt`다(research R5).
-- [ ] T126 **[⚠️G11 서버 지원 후]** FCM 연동을 추가한다.
+- [ ] T119 [P] `fake/presentation/debug/FakePartnerPanel.kt`를 만든다. fake 변형에서만 보이는 디버그 오버레이로, 파트너 입장·선택 완료·종료 요청/응답·추리·채점·소원권 승인/거절을 버튼으로 실행한다(research R12).
+- [ ] T120 `main/presentation/lobby/LobbyViewModel.kt`를 고친다. `CANCELLED` phase를 받으면 취소 안내 event를 한 번 내보내고, 방장의 '미션 시작'을 다시 활성화한다(FR-052b, ⚠️G12 서버 반영 전에는 fake에서만 확인).
+- [ ] T121 [P] `androidTest/flow/FullRoundFlowTest.kt`를 만든다. Fake Repository를 주입한 Compose UI 테스트로, 방 생성 → 설정 → 종료 동의 → 추리 → 채점 → 결산 흐름을 확인한다.
+- [ ] T122 [P] 모든 화면에 접근성을 점검한다: contentDescription, 최소 48dp 터치 영역, 큰 글꼴에서의 레이아웃, 다크 모드 토큰(`main/ui/theme/Color.kt`, `Theme.kt`).
+- [ ] T123 [P] 로그를 점검한다. 토큰과 미션·추리 텍스트가 로그에 남지 않아야 하고, 로깅 인터셉터가 release 빌드에서 꺼져 있어야 한다. 대상은 `main/di/NetworkModule.kt`다(research R5).
+- [ ] T124 **[⚠️G11 서버 지원 후]** FCM 연동을 추가한다.
   - `firebase-messaging` 의존성과 `app/google-services.json`
   - `main/data/push/HilMessagingService.kt`, `main/data/push/NotificationFactory.kt`(알림 채널, 문구 리소스)
   - 토큰 등록 API를 `main/data/api/SpringApiService.kt`에 추가
   - `app/src/main/AndroidManifest.xml`에 `POST_NOTIFICATIONS` 권한 선언
-- [ ] T127 [P] **[⚠️G11 서버 지원 후]** `main/presentation/lobby/LobbyScreen.kt`에서 대기실에 처음 들어올 때 `POST_NOTIFICATIONS` 권한을 요청한다(Android 13 이상). 거부해도 게임 진행에는 영향이 없다(FR-050c).
-- [ ] T128 **[⚠️G11 서버 지원 후]** `main/MainActivity.kt`와 `app/src/main/AndroidManifest.xml`에 딥링크(`hilkkeum://game/current`, `hilkkeum://coupon/incoming`)를 추가한다. 알림을 누르면 상태를 다시 조회한 뒤 이동한다.
-- [ ] T129 서버 갭(G1–G14)이 해결될 때마다 다음을 고친다.
+- [ ] T125 [P] **[⚠️G11 서버 지원 후]** `main/presentation/lobby/LobbyScreen.kt`에서 대기실에 처음 들어올 때 `POST_NOTIFICATIONS` 권한을 요청한다(Android 13 이상). 거부해도 게임 진행에는 영향이 없다(FR-050c).
+- [ ] T126 **[⚠️G11 서버 지원 후]** `main/MainActivity.kt`와 `app/src/main/AndroidManifest.xml`에 딥링크(`hilkkeum://game/current`, `hilkkeum://coupon/incoming`)를 추가한다. 알림을 누르면 상태를 다시 조회한 뒤 이동한다.
+- [ ] T127 서버 갭(G1–G14)이 해결될 때마다 다음을 고친다.
   - optional 필드를 필수 필드로 바꾸고, 로컬 보완 기록(`GameProgressStore`)의 해당 부분을 제거
   - `specs/001-couple-mission-game/contracts/api.md §7`을 갱신
-- [ ] T130 quickstart.md를 실행한다. `testFakeDebugUnitTest`, `connectedFakeDebugAndroidTest`, 2기기 `remote` E2E 1–7단계를 진행하고 결과를 기록한다.
+- [ ] T128 quickstart.md를 실행한다. `testFakeDebugUnitTest`, `connectedFakeDebugAndroidTest`, 2기기 `remote` E2E 1–7단계를 진행하고 결과를 기록한다.
 
 ---
 
@@ -530,14 +520,14 @@ description: "Task list for 힐끔 MVP Android client"
 ```text
 Setup(1) ─▶ Foundational(2) ─▶ US1(3) ─▶ US2(4) ─▶ US3(5) ─▶ US4(6) ─▶ US5(7) ─▶ Polish(10)
                                  │                                          ▲
-                                 ├──────────▶ US6(8) (US5 결산 연동 T109만 US5 이후)
+                                 ├──────────▶ US6(8) (US5 결산 연동 T107만 US5 이후)
                                  └──────────▶ US7(9) (US1의 대기실만 있으면 됨)
 ```
 
 - **US1**: Foundational 이후 바로 시작
 - **US2**: US1의 대기실(T042)과 세션에 의존. Fake로 방 상태를 미리 채우면 병렬로 진행 가능
 - **US3–US5**: 각각 바로 앞 스토리가 만든 `GameRepository`, `RoundNavHost`, `GamePhasePolicy`를 확장한다. 레이어별 담당이 각자 자기 파일만 고치므로 스토리 안에서는 세 사람이 병렬로 진행한다. 스토리끼리는 앱콩의 계약 작업(T070 → T080 → T092) 순서만 지키면 된다
-- **US6**: Foundational과 US1 이후 독립적으로 진행 가능. T114(결산 연동)만 US5 이후
+- **US6**: Foundational과 US1 이후 독립적으로 진행 가능. T112(결산 연동)만 US5 이후
 - **US7**: US1 이후 언제든 가능
 
 ### 서버 의존 (remote 검증 차단 요소)
@@ -546,8 +536,8 @@ Setup(1) ─▶ Foundational(2) ─▶ US1(3) ─▶ US2(4) ─▶ US3(5) ─▶
 |----|-------------|
 | G1 | 참여자의 US2 이후 전체 흐름(T057) |
 | G2 | US4 채점 제출(T086) |
-| G8 | US6 승인 화면(T112) |
-| G11 | T126, T128 |
+| G8 | US6 승인 화면(T110) |
+| G11 | T124, T126 |
 
 fake 변형으로는 모두 진행할 수 있다.
 
@@ -600,9 +590,9 @@ fake 변형으로는 모두 진행할 수 있다.
 **US6**:
 
 ```text
-앱콩 (도메인)      : T102 → T103 → T108 → T109 → T116
-엠키 (데이터)      : T104 → T105 → T106 → T107 → T117
-뭉뭉 (프레젠테이션)   : T110 → T111 → T112 → T113 → T114 → T115
+앱콩 (도메인)      : T100 → T101 → T106 → T107 → T114
+엠키 (데이터)      : T102 → T103 → T104 → T105 → T115
+뭉뭉 (프레젠테이션)   : T108 → T109 → T110 → T111 → T112 → T113
 ```
 
 ---
@@ -629,7 +619,7 @@ US1 → US2 → US3 → US4 → US5(MVP 완성) → US6(보상) → US7(도움�
 | Setup·Foundational | AppResult·AppError·ID·세션 모델, EntryPolicy, FakeServer | Gradle, 세션 저장소, 네트워크·인증, 폴링, DI | 공통 문구·컴포넌트, Route, NavHost, AppViewModel |
 | US1 | 방 모델·InviteCode, RoomRepository, 유스케이스, Fake | 방 DTO·Spring API·RoomRepositoryImpl | 시작·방 생성·코드 입력·대기실 화면 |
 | US2 | 게임 모델, GamePhasePolicy, MissionSelectionPolicy, 유스케이스, Fake | 게임·카탈로그 DTO, Node API, GameProgressStore, 구현 | RoundNavHost, 설정·미션·벌칙 화면 |
-| US3–US5 | 종료·추리·채점·결산·가위바위보 계약과 Fake, ScorePolicy | 해당 Node API와 Repository 구현 | 진행·추리·채점·가위바위보·결산 화면 |
+| US3–US5 | 종료·추리·채점·결산 계약과 Fake, ScorePolicy | 해당 Node API와 Repository 구현 | 진행·추리·채점·결산 화면 |
 | US6 | 스탬프·소원권 모델, 유스케이스, Fake | Spring 스탬프·소원권 API와 구현 | 스탬프·소원권 화면, 대기실·결산 연동 |
 | US7 | — | — | 이용 방법 화면 |
 | Polish | Fake 디버그 패널, quickstart 검증 주도 | 로그 점검, FCM(G11), 서버 갭 반영 | 취소 안내, UI 흐름 테스트, 접근성, 딥링크·권한 요청 |
