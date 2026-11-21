@@ -8,3 +8,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# AI coding tools
+CLAUDE.md
+AGENTS.md
+.claude/
+.codex/
