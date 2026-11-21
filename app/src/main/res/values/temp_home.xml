@@ -3,18 +3,8 @@
     <string name="temp_home_envelope">미션 봉투</string>
     <string name="temp_home_start">작전 시작하기!</string>
     <string name="temp_home_tab">홈</string>
-    <string name="home_help_close">이용 방법 닫기</string>
     <string name="home_sample_serial">No.01</string>
     <string name="home_sample_date">2026.01.24</string>
     <color name="home_help_background">#292929</color>
     <color name="home_stamp_date">#ECECEC</color>
-    <string-array name="home_help_steps">
-        <item>힐끔은 함께 보내는 시간 중에 각자 수행할 미션을 고르고, 상대의 미션을 맞히는 게임이에요.</item>
-        <item>오늘 할 미션 개수를 정하고, 내 미션과 상대가 할 벌칙을 골라요. 서로의 선택은 끝날 때까지 비밀이에요.</item>
-        <item>작전이 끝나면 상대의 미션을 추리하고, 상대방의 추리가 맞았는지를 O/X로 채점해요.</item>
-        <item>내 미션을 수행하지 않으면 패배하니, 잊지 말고 꼭 수행해주세요.</item>
-        <item>둘 다 수행했다면 상대의 미션을 더 많이 맞힌 사람이 승리해요.</item>
-        <item>승자는 스탬프 1개를 받아요. 3개를 모으면 소원권으로 바꿀 수 있고, 상대방에게 소원을 빌 수 있어요.</item>
-        <item>패자는 승자가 고른 벌칙을 이행해야 해요.</item>
-    </string-array>
 </resources>
