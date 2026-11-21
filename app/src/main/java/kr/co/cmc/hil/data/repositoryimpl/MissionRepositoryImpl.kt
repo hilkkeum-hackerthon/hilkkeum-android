@@ -1,8 +1,11 @@
 package kr.co.cmc.hil.data.repositoryimpl
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import kr.co.cmc.hil.data.datastore.TokenStorage
+import kr.co.cmc.hil.data.datastore.withMemberToken
 import kr.co.cmc.hil.data.dto.mission.MissionsResponseDto
 import kr.co.cmc.hil.data.dto.mission.PenaltiesResponseDto
 import kr.co.cmc.hil.data.mapper.toDomain
@@ -19,6 +22,7 @@ import javax.inject.Inject
 
 class MissionRepositoryImpl @Inject constructor(
     private val httpClient: HttpClient,
+    private val tokenStorage: TokenStorage,
 ) : MissionRepository {
 
     /**
@@ -36,8 +40,10 @@ class MissionRepositoryImpl @Inject constructor(
      * `GET api/v1/penalties`를 호출하고 응답을 [Penalty] 목록으로 변환한다.
      */
     override suspend fun getPenalties(): AppResult<List<Penalty>, AppError.Network> {
-        return safeApiCall<PenaltiesResponseDto> {
-            httpClient.get("api/v1/penalties")
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<PenaltiesResponseDto> {
+                httpClient.get("api/v1/penalties") { bearerAuth(token) }
+            }.map { it.toDomain() }
+        }
     }
 }

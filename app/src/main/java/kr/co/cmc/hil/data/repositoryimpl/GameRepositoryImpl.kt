@@ -3,9 +3,8 @@ package kr.co.cmc.hil.data.repositoryimpl
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
-import java.io.IOException
-import kotlinx.coroutines.flow.first
 import kr.co.cmc.hil.data.datastore.TokenStorage
+import kr.co.cmc.hil.data.datastore.withMemberToken
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kr.co.cmc.hil.data.dto.game.ActiveGameResponseDto
@@ -62,7 +61,7 @@ class GameRepositoryImpl @Inject constructor(
         dateType: DateType,
         missionCount: Int,
     ): AppResult<CreatedGame, AppError.Network> {
-        return withMemberToken { token ->
+        return tokenStorage.withMemberToken { token ->
             safeApiCall<CreateGameResponseDto> {
                 httpClient.post("api/v1/games") {
                     bearerAuth(token)
@@ -82,32 +81,22 @@ class GameRepositoryImpl @Inject constructor(
      * `GET api/v1/games/{gameId}`를 호출하고 응답을 [Game]으로 변환한다.
      */
     override suspend fun getGame(gameId: GameId): AppResult<Game, AppError.Network> {
-        return withMemberToken { token ->
+        return tokenStorage.withMemberToken { token ->
             safeApiCall<GameResponseDto> {
                 httpClient.get("api/v1/games/${gameId.value}") { bearerAuth(token) }
             }.map { it.toDomain() }
         }
     }
 
-    private suspend fun <T> withMemberToken(
-        request: suspend (String) -> AppResult<T, AppError.Network>,
-    ): AppResult<T, AppError.Network> {
-        val token = try {
-            tokenStorage.memberToken.first()
-        } catch (_: IOException) {
-            return AppResult.Error(AppError.Network.UNKNOWN)
-        }
-        return if (token.isNullOrBlank()) AppResult.Error(AppError.Network.UNAUTHORIZED)
-        else request(token)
-    }
-
     /**
      * `GET api/v1/games/room/{roomId}/active`를 호출하고 응답에서 [GameId]를 꺼낸다.
      */
     override suspend fun getActiveGameId(roomId: RoomId): AppResult<GameId?, AppError.Network> {
-        return safeApiCall<ActiveGameResponseDto> {
-            httpClient.get("api/v1/games/room/${roomId.value}/active")
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<ActiveGameResponseDto> {
+                httpClient.get("api/v1/games/room/${roomId.value}/active") { bearerAuth(token) }
+            }.map { it.toDomain() }
+        }
     }
 
     /**
@@ -117,11 +106,14 @@ class GameRepositoryImpl @Inject constructor(
         gameId: GameId,
         missionIds: List<MissionId>,
     ): AppResult<MissionSelection, AppError.Network> {
-        return safeApiCall<SelectMissionsResponseDto> {
-            httpClient.post("api/v1/games/${gameId.value}/missions") {
-                setBody(SelectMissionsRequestDto(missionIds = missionIds.map { it.value }))
-            }
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<SelectMissionsResponseDto> {
+                httpClient.post("api/v1/games/${gameId.value}/missions") {
+                    bearerAuth(token)
+                    setBody(SelectMissionsRequestDto(missionIds = missionIds.map { it.value }))
+                }
+            }.map { it.toDomain() }
+        }
     }
 
     /**
@@ -131,20 +123,25 @@ class GameRepositoryImpl @Inject constructor(
         gameId: GameId,
         penaltyId: PenaltyId,
     ): AppResult<PenaltySelection, AppError.Network> {
-        return safeApiCall<SelectPenaltyResponseDto> {
-            httpClient.post("api/v1/games/${gameId.value}/penalty") {
-                setBody(SelectPenaltyRequestDto(penaltyId = penaltyId.value))
-            }
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<SelectPenaltyResponseDto> {
+                httpClient.post("api/v1/games/${gameId.value}/penalty") {
+                    bearerAuth(token)
+                    setBody(SelectPenaltyRequestDto(penaltyId = penaltyId.value))
+                }
+            }.map { it.toDomain() }
+        }
     }
 
     /**
      * `POST api/v1/games/{gameId}/end`를 호출한다. 응답 본문은 성공 여부 확인에만 쓰고 버린다.
      */
     override suspend fun endGame(gameId: GameId): EmptyAppResult<AppError.Network> {
-        return safeApiCall<EndGameResponseDto> {
-            httpClient.post("api/v1/games/${gameId.value}/end")
-        }.asEmptyResult()
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<EndGameResponseDto> {
+                httpClient.post("api/v1/games/${gameId.value}/end") { bearerAuth(token) }
+            }.asEmptyResult()
+        }
     }
 
     /**
@@ -155,20 +152,25 @@ class GameRepositoryImpl @Inject constructor(
         gameId: GameId,
         guesses: List<String>,
     ): AppResult<GuessSubmission, AppError.Network> {
-        return safeApiCall<SubmitGuessesResponseDto> {
-            httpClient.post("api/v1/games/${gameId.value}/guesses") {
-                setBody(SubmitGuessesRequestDto(guesses = guesses.toGuessRequestDtos()))
-            }
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<SubmitGuessesResponseDto> {
+                httpClient.post("api/v1/games/${gameId.value}/guesses") {
+                    bearerAuth(token)
+                    setBody(SubmitGuessesRequestDto(guesses = guesses.toGuessRequestDtos()))
+                }
+            }.map { it.toDomain() }
+        }
     }
 
     /**
      * `GET api/v1/games/{gameId}/received-guesses`를 호출하고 응답을 [ReceivedGuesses]로 변환한다.
      */
     override suspend fun getReceivedGuesses(gameId: GameId): AppResult<ReceivedGuesses, AppError.Network> {
-        return safeApiCall<ReceivedGuessesResponseDto> {
-            httpClient.get("api/v1/games/${gameId.value}/received-guesses")
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<ReceivedGuessesResponseDto> {
+                httpClient.get("api/v1/games/${gameId.value}/received-guesses") { bearerAuth(token) }
+            }.map { it.toDomain() }
+        }
     }
 
     /**
@@ -179,19 +181,24 @@ class GameRepositoryImpl @Inject constructor(
         guessId: GuessId,
         isCorrect: Boolean,
     ): AppResult<GuessJudgment, AppError.Network> {
-        return safeApiCall<JudgeGuessResponseDto> {
-            httpClient.post("api/v1/games/${gameId.value}/judgments") {
-                setBody(JudgeGuessRequestDto(guessId = guessId.value, isCorrect = isCorrect))
-            }
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<JudgeGuessResponseDto> {
+                httpClient.post("api/v1/games/${gameId.value}/judgments") {
+                    bearerAuth(token)
+                    setBody(JudgeGuessRequestDto(guessId = guessId.value, isCorrect = isCorrect))
+                }
+            }.map { it.toDomain() }
+        }
     }
 
     /**
      * `GET api/v1/games/{gameId}/result`를 호출하고 응답을 [GameResult]로 변환한다.
      */
     override suspend fun getGameResult(gameId: GameId): AppResult<GameResult, AppError.Network> {
-        return safeApiCall<GameResultResponseDto> {
-            httpClient.get("api/v1/games/${gameId.value}/result")
-        }.map { it.toDomain() }
+        return tokenStorage.withMemberToken { token ->
+            safeApiCall<GameResultResponseDto> {
+                httpClient.get("api/v1/games/${gameId.value}/result") { bearerAuth(token) }
+            }.map { it.toDomain() }
+        }
     }
 }
