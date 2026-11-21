@@ -4,16 +4,11 @@
    for details.
 -->
 <data-extraction-rules>
+    <!-- 회원 토큰은 다른 기기로 복원되지 않도록 백업/기기 이전에서 제외한다. (DataStoreModule.TOKEN_DATASTORE_NAME) -->
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="file" path="datastore/token_storage.preferences_pb" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="file" path="datastore/token_storage.preferences_pb" />
     </device-transfer>
-    -->
 </data-extraction-rules>

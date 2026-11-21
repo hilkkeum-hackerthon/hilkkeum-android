@@ -8,6 +8,9 @@ import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -17,8 +20,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import kr.co.cmc.hil.BuildConfig
+import kr.co.cmc.hil.data.datastore.TokenStorage
 import javax.inject.Singleton
 
 /**
@@ -42,10 +47,19 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideHttpClient(json: Json): HttpClient = HttpClient(OkHttp) {
+    fun provideHttpClient(json: Json, tokenStorage: TokenStorage): HttpClient = HttpClient(OkHttp) {
         defaultRequest {
             url(BuildConfig.BASE_URL)
             contentType(ContentType.Application.Json)
+        }
+
+        // 토큰은 한 번 발급되면 바뀌지 않는다. 저장되기 전(null)에는 요청마다 다시 읽고, 저장된 뒤에는 캐시된 값을 쓴다.
+        install(Auth) {
+            bearer {
+                loadTokens {
+                    tokenStorage.memberToken.first()?.let { BearerTokens(accessToken = it, refreshToken = null) }
+                }
+            }
         }
 
         install(ContentNegotiation) {

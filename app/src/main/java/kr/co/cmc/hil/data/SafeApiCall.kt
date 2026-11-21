@@ -1,4 +1,4 @@
-package kr.co.cmc.hil.data.api
+package kr.co.cmc.hil.data
 
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpRequestTimeoutException
