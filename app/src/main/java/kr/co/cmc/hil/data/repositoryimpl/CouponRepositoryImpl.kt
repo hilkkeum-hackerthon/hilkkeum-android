@@ -55,12 +55,12 @@ class CouponRepositoryImpl @Inject constructor(
     }
 
     /**
-     * `POST api/v1/coupons/{couponId}/use-request`를 호출하고 응답을 [CouponUseRequest]로 변환한다.
+     * `POST api/v1/coupons/{couponId}/use`를 호출하고 응답을 [CouponUseRequest]로 변환한다.
      */
     override suspend fun requestCouponUse(couponId: CouponId): AppResult<CouponUseRequest, AppError.Network> {
         return tokenStorage.withMemberToken { token ->
             safeApiCall<CouponUseRequestResponseDto> {
-                httpClient.post("api/v1/coupons/${couponId.value}/use-request") { bearerAuth(token) }
+                httpClient.post("api/v1/coupons/${couponId.value}/use") { bearerAuth(token) }
             }.map { it.toDomain() }
         }
     }

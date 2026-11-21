@@ -148,6 +148,27 @@ class WishCouponViewModelTest {
     }
 
     @Test
+    fun immediateUseRefreshesCouponAndStampState() = runTest(dispatcher) {
+        stampRepository.stamps = stamps(0, hasActiveCoupon = true)
+        couponRepository.coupons += coupon(CouponStatus.AVAILABLE)
+        val viewModel = viewModel()
+        val events = collectEvents(viewModel)
+        viewModel.onAction(WishCouponAction.Refresh)
+        runCurrent()
+
+        couponRepository.requestUseResult = AppResult.Success(
+            CouponUseRequest(CouponId(1), MemberId(1), waitingForPartner = false),
+        )
+        couponRepository.coupons.clear()
+        stampRepository.stamps = stamps(0)
+        viewModel.onAction(WishCouponAction.RequestUse)
+        runCurrent()
+
+        assertEquals(WishCouponButtonState.Locked, viewModel.uiState.value.buttonState)
+        assertTrue(WishCouponEvent.ShowMessage(R.string.wish_ticket_used) in events)
+    }
+
+    @Test
     fun requestUseMovesToPendingAndApprovalIsDetectedByPolling() = runTest(dispatcher) {
         stampRepository.stamps = stamps(0, hasActiveCoupon = true)
         couponRepository.coupons += coupon(CouponStatus.AVAILABLE)

@@ -43,6 +43,7 @@ import kr.co.cmc.hil.presentation.quest.GameSetupViewModel
 import kr.co.cmc.hil.presentation.quest.QuestCountScreen
 import kr.co.cmc.hil.presentation.quest.QuestMode
 import kr.co.cmc.hil.presentation.quest.QuestModeScreen
+import kr.co.cmc.hil.domain.model.game.DateType
 import kr.co.cmc.hil.presentation.quest.QuestPenaltyScreen
 import kr.co.cmc.hil.presentation.quest.QuestSelectionScreen
 import kr.co.cmc.hil.presentation.quest.operation.MissionGuessScreen
@@ -80,25 +81,25 @@ internal object QuestModeRoute
 private data class QuestCountRoute(val mode: QuestMode)
 
 @Serializable
-private data class QuestSelectionRoute(val gameId: Long, val missionCount: Int)
+private data class QuestSelectionRoute(val gameId: Long, val missionCount: Int, val dateType: String)
 
 @Serializable
-private data class QuestPenaltyRoute(val gameId: Long, val missionIds: List<Int>)
+private data class QuestPenaltyRoute(val gameId: Long, val missionLabels: List<String>)
 
 @Serializable
-private data class OperationWaitingRoute(val gameId: Long, val missionIds: List<Int>, val penaltyId: Int)
+private data class OperationWaitingRoute(val gameId: Long, val missionLabels: List<String>, val penaltyLabel: String)
 
 @Serializable
-private data class OperationProgressRoute(val missionIds: List<Int>, val penaltyId: Int)
+private data class OperationProgressRoute(val gameId: Long, val missionLabels: List<String>, val penaltyLabel: String)
 
 @Serializable
-private data class MissionGuessRoute(val missionIds: List<Int>)
+private data class MissionGuessRoute(val gameId: Long, val missionLabels: List<String>)
 
 @Serializable
-private data class MissionJudgementRoute(val missionIds: List<Int>)
+private data class MissionJudgementRoute(val gameId: Long, val missionLabels: List<String>)
 
 @Serializable
-private data class OperationResultRoute(val partnerCorrectCount: Int)
+private data class OperationResultRoute(val gameId: Long, val partnerCorrectCount: Int = 0)
 
 private const val PreviewGameId = 0L
 private const val PreviewPartnerWaitMillis = 1_500L
@@ -146,8 +147,34 @@ internal fun HilkkeumNavHost(
             when (event) {
                 is GameSetupEvent.OpenSelection -> {
                     if (navigation.currentDestination?.hasRoute<QuestCountRoute>() == true) {
-                        navigation.navigate(QuestSelectionRoute(event.gameId, event.count)) {
+                        navigation.navigate(QuestSelectionRoute(event.gameId, event.count, event.dateType.name)) {
                             popUpTo<QuestModeRoute> { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+                is GameSetupEvent.MissionsSubmitted -> {
+                    val entry = navigation.currentBackStackEntry
+                    if (entry?.destination?.hasRoute<QuestSelectionRoute>() == true) {
+                        val route = entry.toRoute<QuestSelectionRoute>()
+                        navigation.navigate(QuestPenaltyRoute(route.gameId, event.labels)) { launchSingleTop = true }
+                    }
+                }
+                is GameSetupEvent.PenaltySubmitted -> {
+                    val entry = navigation.currentBackStackEntry
+                    if (entry?.destination?.hasRoute<QuestPenaltyRoute>() == true) {
+                        val route = entry.toRoute<QuestPenaltyRoute>()
+                        navigation.navigate(OperationWaitingRoute(route.gameId, route.missionLabels, event.label)) {
+                            launchSingleTop = true
+                        }
+                    }
+                }
+                GameSetupEvent.GuessesSubmitted -> {
+                    val entry = navigation.currentBackStackEntry
+                    if (entry?.destination?.hasRoute<MissionGuessRoute>() == true) {
+                        val route = entry.toRoute<MissionGuessRoute>()
+                        navigation.navigate(MissionJudgementRoute(route.gameId, route.missionLabels)) {
+                            popUpTo<MissionGuessRoute> { inclusive = true }
                             launchSingleTop = true
                         }
                     }
@@ -250,7 +277,7 @@ internal fun HilkkeumNavHost(
             val mode = entry.toRoute<QuestCountRoute>().mode
             QuestCountScreen(isSubmitting = game.isLoading, onNext = { count ->
                 if (isHomePreview) {
-                    navigation.navigate(QuestSelectionRoute(PreviewGameId, count)) {
+                    navigation.navigate(QuestSelectionRoute(PreviewGameId, count, DateType.OFFLINE.name)) {
                         popUpTo<QuestModeRoute> { inclusive = true }
                         launchSingleTop = true
                     }
@@ -261,17 +288,41 @@ internal fun HilkkeumNavHost(
         }
         composable<QuestSelectionRoute> { entry ->
             val route = entry.toRoute<QuestSelectionRoute>()
-            QuestSelectionScreen(missionCount = route.missionCount, onNext = { missionIds ->
-                navigation.navigate(QuestPenaltyRoute(route.gameId, missionIds)) { launchSingleTop = true }
-            })
+            val sampleLabels = stringArrayResource(R.array.operation_sample_missions).toList()
+            val labels = if (isHomePreview) sampleLabels else game.missions?.map { it.content }
+            val load = { gameSetupViewModel.onAction(GameSetupAction.LoadMissions(DateType.valueOf(route.dateType))) }
+            LaunchedEffect(route) { if (!isHomePreview) load() }
+            val status: (@Composable () -> Unit)? = if (labels == null || labels.size < route.missionCount) {
+                { CatalogStatusContent(game.hasCatalogError || labels != null, load) }
+            } else null
+            QuestSelectionScreen(route.missionCount, labels.orEmpty(), game.isLoading, status) { indices ->
+                if (isHomePreview) {
+                    navigation.navigate(QuestPenaltyRoute(route.gameId, indices.map(sampleLabels::get))) {
+                        launchSingleTop = true
+                    }
+                } else {
+                    gameSetupViewModel.onAction(GameSetupAction.SubmitMissions(route.gameId, indices))
+                }
+            }
         }
         composable<QuestPenaltyRoute> { entry ->
             val route = entry.toRoute<QuestPenaltyRoute>()
-            QuestPenaltyScreen(onNext = { penaltyId ->
-                navigation.navigate(OperationWaitingRoute(route.gameId, route.missionIds, penaltyId)) {
-                    launchSingleTop = true
+            val samples = stringArrayResource(R.array.operation_sample_penalties).toList()
+            val load = { gameSetupViewModel.onAction(GameSetupAction.LoadPenalties) }
+            LaunchedEffect(route) { if (!isHomePreview) load() }
+            val labels = if (isHomePreview) samples else game.penalties?.map { it.content }
+            val status: (@Composable () -> Unit)? = if (labels.isNullOrEmpty()) {
+                { CatalogStatusContent(game.hasCatalogError || labels != null, load) }
+            } else null
+            QuestPenaltyScreen(labels.orEmpty(), game.isLoading, status) { index ->
+                if (isHomePreview) {
+                    navigation.navigate(OperationWaitingRoute(route.gameId, route.missionLabels, samples[index])) {
+                        launchSingleTop = true
+                    }
+                } else {
+                    gameSetupViewModel.onAction(GameSetupAction.SubmitPenalty(route.gameId, index))
                 }
-            })
+            }
         }
         composable<OperationWaitingRoute> { entry ->
             val route = entry.toRoute<OperationWaitingRoute>()
@@ -293,7 +344,7 @@ internal fun HilkkeumNavHost(
                 isPartnerReady = if (isHomePreview) isPreviewPartnerReady else game.playingGameId == route.gameId,
                 hasStatusError = !isHomePreview && game.hasStatusError,
                 onReady = {
-                    navigation.navigate(OperationProgressRoute(route.missionIds, route.penaltyId)) {
+                    navigation.navigate(OperationProgressRoute(route.gameId, route.missionLabels, route.penaltyLabel)) {
                         popUpTo<OperationWaitingRoute> { inclusive = true }
                         launchSingleTop = true
                     }
@@ -302,14 +353,32 @@ internal fun HilkkeumNavHost(
         }
         composable<OperationProgressRoute> { entry ->
             val route = entry.toRoute<OperationProgressRoute>()
+            if (!isHomePreview) {
+                LifecycleStartEffect(route.gameId) {
+                    gameSetupViewModel.onAction(GameSetupAction.Observe(route.gameId))
+                    onStopOrDispose { gameSetupViewModel.onAction(GameSetupAction.Observe(null)) }
+                }
+                LaunchedEffect(game.guessingGameId, game.finishedGameId) {
+                    if (game.finishedGameId == route.gameId) {
+                        navigation.navigate(OperationResultRoute(route.gameId)) { launchSingleTop = true }
+                    } else if (game.guessingGameId == route.gameId) {
+                        navigation.navigate(MissionGuessRoute(route.gameId, route.missionLabels)) {
+                            popUpTo<OperationProgressRoute> { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            }
             OperationProgressScreen(
-                missionIds = route.missionIds,
-                penaltyId = route.penaltyId,
+                missions = route.missionLabels,
+                penalty = route.penaltyLabel,
                 onEnd = {
-                    if (entry.savedStateHandle.contains(SubmittedMissionGuessesKey)) {
-                        navigation.navigate(MissionJudgementRoute(route.missionIds)) { launchSingleTop = true }
+                    if (!isHomePreview) {
+                        gameSetupViewModel.onAction(GameSetupAction.End(route.gameId))
+                    } else if (entry.savedStateHandle.contains(SubmittedMissionGuessesKey)) {
+                        navigation.navigate(MissionJudgementRoute(route.gameId, route.missionLabels)) { launchSingleTop = true }
                     } else {
-                        navigation.navigate(MissionGuessRoute(route.missionIds)) { launchSingleTop = true }
+                        navigation.navigate(MissionGuessRoute(route.gameId, route.missionLabels)) { launchSingleTop = true }
                     }
                 },
             )
@@ -317,14 +386,22 @@ internal fun HilkkeumNavHost(
         composable<MissionGuessRoute> { entry ->
             val route = entry.toRoute<MissionGuessRoute>()
             val roundState = navigation.previousBackStackEntry?.savedStateHandle ?: entry.savedStateHandle
+            ObserveRoundForResult(route.gameId, gameSetupViewModel, isHomePreview, isFinished = game.finishedGameId == route.gameId) {
+                navigation.navigate(OperationResultRoute(route.gameId)) { launchSingleTop = true }
+            }
             MissionGuessScreen(
-                missionCount = route.missionIds.size,
+                missionCount = route.missionLabels.size,
                 submittedAnswers = roundState.get<ArrayList<String>>(SubmittedMissionGuessesKey),
+                isSubmitting = !isHomePreview && game.isLoading,
                 onSubmit = { answers ->
-                    roundState[SubmittedMissionGuessesKey] = ArrayList(answers)
-                    navigation.navigate(MissionJudgementRoute(route.missionIds)) {
-                        popUpTo<MissionGuessRoute> { inclusive = true }
-                        launchSingleTop = true
+                    if (isHomePreview) {
+                        roundState[SubmittedMissionGuessesKey] = ArrayList(answers)
+                        navigation.navigate(MissionJudgementRoute(route.gameId, route.missionLabels)) {
+                            popUpTo<MissionGuessRoute> { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        gameSetupViewModel.onAction(GameSetupAction.SubmitGuesses(route.gameId, answers))
                     }
                 },
             )
@@ -332,28 +409,59 @@ internal fun HilkkeumNavHost(
         composable<MissionJudgementRoute> { entry ->
             val route = entry.toRoute<MissionJudgementRoute>()
             val roundState = navigation.previousBackStackEntry?.savedStateHandle ?: entry.savedStateHandle
-            val missionLabels = stringArrayResource(R.array.operation_sample_missions)
-            val partnerGuesses = stringArrayResource(R.array.mission_judge_sample_partner_guesses)
-            MissionJudgementScreen(
-                ownMissions = route.missionIds.map { id -> missionLabels.getOrNull(id - 1).orEmpty() },
-                partnerGuesses = partnerGuesses.take(route.missionIds.size),
-                savedCorrectIndices = roundState.get<ArrayList<Int>>(MissionJudgementsKey).orEmpty(),
-                onResult = { correctIndices ->
-                    roundState[MissionJudgementsKey] = ArrayList(correctIndices)
-                    navigation.navigate(OperationResultRoute(correctIndices.size)) {
-                        launchSingleTop = true
-                    }
-                },
-            )
+            ObserveRoundForResult(route.gameId, gameSetupViewModel, isHomePreview, fetchGuesses = true,
+                isFinished = game.finishedGameId == route.gameId) {
+                navigation.navigate(OperationResultRoute(route.gameId)) { launchSingleTop = true }
+            }
+            val received = game.receivedGuesses?.takeIf { it.gameId.value == route.gameId }
+            val partnerGuesses = if (isHomePreview) {
+                stringArrayResource(R.array.mission_judge_sample_partner_guesses).take(route.missionLabels.size)
+            } else {
+                received?.takeIf { it.partnerSubmissionCompleted }?.guesses?.map { it.content }.orEmpty()
+            }
+            if (!isHomePreview && game.judgedGameId == route.gameId) {
+                RoomStatusScreen(stringResource(R.string.operation_result_grading))
+            } else if (partnerGuesses.isEmpty()) {
+                RoomStatusScreen(stringResource(
+                    if (game.hasStatusError) R.string.game_status_failed else R.string.game_wait_for_guesses,
+                ))
+            } else {
+                MissionJudgementScreen(
+                    ownMissions = route.missionLabels,
+                    partnerGuesses = partnerGuesses,
+                    savedCorrectIndices = roundState.get<ArrayList<Int>>(MissionJudgementsKey).orEmpty(),
+                    onResult = { correctIndices ->
+                        if (isHomePreview) {
+                            roundState[MissionJudgementsKey] = ArrayList(correctIndices)
+                            navigation.navigate(OperationResultRoute(route.gameId, correctIndices.size)) {
+                                launchSingleTop = true
+                            }
+                        } else {
+                            gameSetupViewModel.onAction(GameSetupAction.Judge(route.gameId, correctIndices))
+                        }
+                    },
+                )
+            }
         }
         composable<OperationResultRoute> { entry ->
             val route = entry.toRoute<OperationResultRoute>()
-            OperationResultScreen(partnerCorrectCount = route.partnerCorrectCount, onFinish = {
-                navigation.navigate(WishCouponRoute) {
-                    popUpTo<TemporaryHomeRoute>()
-                    launchSingleTop = true
-                }
-            })
+            val result = game.result?.takeIf { it.gameId.value == route.gameId }
+            val load = { gameSetupViewModel.onAction(GameSetupAction.LoadResult(route.gameId)) }
+            LaunchedEffect(route) { if (!isHomePreview) load() }
+            if (!isHomePreview && result == null) {
+                CatalogStatusScreen(game.hasResultError, load)
+            } else {
+                OperationResultScreen(
+                    partnerCorrectCount = route.partnerCorrectCount,
+                    result = result,
+                    onFinish = {
+                        navigation.navigate(WishCouponRoute) {
+                            popUpTo<TemporaryHomeRoute>()
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
         }
     }
 }
@@ -366,5 +474,51 @@ private fun RoomStatusScreen(message: String? = null) {
     ) {
         if (message == null) CircularProgressIndicator()
         else Text(text = message, color = Color.White)
+    }
+}
+
+@Composable
+private fun CatalogStatusScreen(hasError: Boolean, onRetry: () -> Unit) {
+    if (hasError) {
+        Box(
+            Modifier.fillMaxSize().background(colorResource(R.color.entrance_background)),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.material3.Button(onClick = onRetry) {
+                Text(stringResource(R.string.game_catalog_retry))
+            }
+        }
+    } else {
+        RoomStatusScreen()
+    }
+}
+
+@Composable
+private fun ObserveRoundForResult(
+    gameId: Long,
+    viewModel: GameSetupViewModel,
+    isPreview: Boolean,
+    fetchGuesses: Boolean = false,
+    isFinished: Boolean,
+    onFinished: () -> Unit,
+) {
+    if (!isPreview) {
+        LifecycleStartEffect(gameId, fetchGuesses) {
+            viewModel.onAction(GameSetupAction.Observe(gameId, fetchGuesses))
+            onStopOrDispose { viewModel.onAction(GameSetupAction.Observe(null)) }
+        }
+        LaunchedEffect(isFinished) { if (isFinished) onFinished() }
+    }
+}
+
+
+@Composable
+private fun CatalogStatusContent(hasError: Boolean, onRetry: () -> Unit) {
+    if (hasError) {
+        androidx.compose.material3.Button(onClick = onRetry) {
+            Text(stringResource(R.string.game_catalog_retry))
+        }
+    } else {
+        CircularProgressIndicator()
     }
 }

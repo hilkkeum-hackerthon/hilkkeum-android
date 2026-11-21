@@ -37,8 +37,8 @@ fun CouponsResponseDto.toDomain(): Coupon? = coupon?.toDomain()
  */
 fun CouponUseRequestResponseDto.toDomain(): CouponUseRequest = CouponUseRequest(
     couponId = CouponId(couponId),
-    requestedByMemberId = MemberId(requestedByMemberId),
-    waitingForPartner = waitingForPartner,
+    requestedByMemberId = MemberId(memberId),
+    waitingForPartner = false,
 )
 
 /**
