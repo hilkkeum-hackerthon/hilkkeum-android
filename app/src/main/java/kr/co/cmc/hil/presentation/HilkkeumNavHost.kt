@@ -53,6 +53,7 @@ import kr.co.cmc.hil.presentation.quest.operation.MissionJudgementScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationProgressScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationResultScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationWaitingScreen
+import kr.co.cmc.hil.presentation.splash.SplashScreen
 import kr.co.cmc.hil.presentation.stamp.WishCouponAction
 import kr.co.cmc.hil.presentation.stamp.WishCouponScreen
 import kr.co.cmc.hil.presentation.stamp.WishCouponViewModel
@@ -125,8 +126,10 @@ internal fun HilkkeumNavHost(
     LaunchedEffect(roomEntryViewModel, context) {
         roomEntryViewModel.event.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
-    if (!isHomePreview && room.isRestoring) {
-        RoomStatusScreen()
+    // 앱 시작 시 스플래시를 최소 시간만큼 보여주고, 방 세션 복원이 끝날 때까지 유지한다.
+    var isSplashFinished by rememberSaveable { mutableStateOf(isHomePreview) }
+    if (!isSplashFinished || (!isHomePreview && room.isRestoring)) {
+        SplashScreen(onFinished = { isSplashFinished = true })
         return
     }
     val navigation = rememberNavController()
