@@ -11,4 +11,15 @@ data class Stamps(
     val maxHearts: Int,
     val canExchange: Boolean,
     val hasActiveCoupon: Boolean,
-)
+) {
+    /** 스탬프가 가득 찼다. */
+    val isFull: Boolean
+        get() = heartCount >= maxHearts
+
+    /**
+     * 스탬프가 가득 찼는데 소원권도 보유 중이라 더 이길 때 스탬프를 받을 수 없는 상태다 (FR-047).
+     * 소원권을 쓰거나 만료되기 전까지는 교환할 수도 없다.
+     */
+    val showFullWarning: Boolean
+        get() = isFull && hasActiveCoupon
+}
