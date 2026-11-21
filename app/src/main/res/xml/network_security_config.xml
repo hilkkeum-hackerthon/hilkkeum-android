@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 개발 서버가 HTTP라서 해당 호스트만 평문 통신을 허용한다. HTTPS 전환 시 제거. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">13.124.37.247</domain>
+    </domain-config>
+</network-security-config>
