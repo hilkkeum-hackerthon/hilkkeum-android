@@ -1,8 +1,12 @@
 package kr.co.cmc.hil.di
 
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.domain.repository.RoomRepository
+import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
+import javax.inject.Singleton
 
 /**
  * UseCase 인스턴스를 제공한다.
@@ -20,4 +24,8 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
 
+    @Provides
+    @Singleton
+    fun provideCreateRoomUseCase(repository: RoomRepository): CreateRoomUseCase =
+        CreateRoomUseCase(repository)
 }
