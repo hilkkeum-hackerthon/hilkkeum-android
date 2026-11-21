@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -120,15 +119,12 @@ private fun WishCouponContent(
                     }
                 }
             }
-            HomeStampToggle(
-                stampSelected = true,
-                onHome = onHome,
-                onStamp = {},
-                modifier = Modifier.align(Alignment.BottomStart)
-                    .navigationBarsPadding()
-                    .padding(start = 16.dp * factor, bottom = 14.dp),
-            )
         }
+        HomeStampToggle(
+            stampSelected = true,
+            onHome = onHome,
+            onStamp = {},
+        )
     }
 }
 

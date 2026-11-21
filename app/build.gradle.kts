@@ -32,6 +32,13 @@ android {
     }
 
     buildTypes {
+        create("homePreview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = "-home-preview"
+            matchingFallbacks += "debug"
+        }
+
         release {
             isMinifyEnabled = true
             proguardFiles(

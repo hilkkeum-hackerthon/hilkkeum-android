@@ -16,6 +16,9 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -23,6 +26,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import kotlinx.coroutines.delay
+import kr.co.cmc.hil.BuildConfig
 import kr.co.cmc.hil.R
 import kr.co.cmc.hil.presentation.entrance.EntranceScreen
 import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
@@ -40,6 +45,7 @@ import kr.co.cmc.hil.presentation.quest.QuestSelectionScreen
 import kr.co.cmc.hil.presentation.quest.operation.MissionGuessScreen
 import kr.co.cmc.hil.presentation.quest.operation.MissionJudgementScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationProgressScreen
+import kr.co.cmc.hil.presentation.quest.operation.OperationResultScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationWaitingScreen
 import kr.co.cmc.hil.presentation.stamp.WishCouponScreen
 import kr.co.cmc.hil.presentation.stamp.WishCouponViewModel
@@ -84,6 +90,12 @@ private data class MissionGuessRoute(val missionIds: List<Int>)
 @Serializable
 private data class MissionJudgementRoute(val missionIds: List<Int>)
 
+@Serializable
+private data class OperationResultRoute(val partnerCorrectCount: Int)
+
+private const val PreviewGameId = 0L
+private const val PreviewPartnerWaitMillis = 1_500L
+
 private const val SubmittedMissionGuessesKey = "submittedMissionGuesses"
 private const val MissionJudgementsKey = "missionJudgements"
 
@@ -94,12 +106,13 @@ internal fun HilkkeumNavHost(
     gameSetupViewModel: GameSetupViewModel,
     onClose: () -> Unit,
 ) {
+    val isHomePreview = BuildConfig.DEBUG && BuildConfig.BUILD_TYPE == "homePreview"
     val room by roomEntryViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LaunchedEffect(roomEntryViewModel, context) {
         roomEntryViewModel.event.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
-    if (room.isRestoring) {
+    if (!isHomePreview && room.isRestoring) {
         RoomStatusScreen()
         return
     }
@@ -122,6 +135,7 @@ internal fun HilkkeumNavHost(
         }
     }
     LaunchedEffect(room.session, room.isPaired) {
+        if (isHomePreview) return@LaunchedEffect
         val destination = navigation.currentDestination
         if (room.session == null) {
             if (destination?.hasRoute<EntranceRoute>() == false &&
@@ -142,7 +156,8 @@ internal fun HilkkeumNavHost(
             navigation.navigate(ShareInvitationRoute) { popUpTo(navigation.graph.id) }
         }
     }
-    NavHost(navigation, startDestination = EntranceRoute) {
+    val startDestination: Any = if (isHomePreview) TemporaryHomeRoute else EntranceRoute
+    NavHost(navigation, startDestination = startDestination) {
         composable<TemporaryHomeRoute> {
             TemporaryHomeScreen(
                 onStartMission = { navigation.navigate(QuestModeRoute) { launchSingleTop = true } },
@@ -197,7 +212,14 @@ internal fun HilkkeumNavHost(
         composable<QuestCountRoute> { entry ->
             val mode = entry.toRoute<QuestCountRoute>().mode
             QuestCountScreen(isSubmitting = game.isLoading, onNext = { count ->
-                room.session?.let { gameSetupViewModel.onAction(GameSetupAction.Continue(it, mode, count)) }
+                if (isHomePreview) {
+                    navigation.navigate(QuestSelectionRoute(PreviewGameId, count)) {
+                        popUpTo<QuestModeRoute> { inclusive = true }
+                        launchSingleTop = true
+                    }
+                } else {
+                    room.session?.let { gameSetupViewModel.onAction(GameSetupAction.Continue(it, mode, count)) }
+                }
             })
         }
         composable<QuestSelectionRoute> { entry ->
@@ -216,13 +238,23 @@ internal fun HilkkeumNavHost(
         }
         composable<OperationWaitingRoute> { entry ->
             val route = entry.toRoute<OperationWaitingRoute>()
-            LifecycleStartEffect(route.gameId) {
-                gameSetupViewModel.onAction(GameSetupAction.Observe(route.gameId))
-                onStopOrDispose { gameSetupViewModel.onAction(GameSetupAction.Observe(null)) }
+            var isPreviewPartnerReady by rememberSaveable { mutableStateOf(false) }
+            if (isHomePreview) {
+                LaunchedEffect(route.gameId) {
+                    if (!isPreviewPartnerReady) {
+                        delay(PreviewPartnerWaitMillis)
+                        isPreviewPartnerReady = true
+                    }
+                }
+            } else {
+                LifecycleStartEffect(route.gameId) {
+                    gameSetupViewModel.onAction(GameSetupAction.Observe(route.gameId))
+                    onStopOrDispose { gameSetupViewModel.onAction(GameSetupAction.Observe(null)) }
+                }
             }
             OperationWaitingScreen(
-                isPartnerReady = game.playingGameId == route.gameId,
-                hasStatusError = game.hasStatusError,
+                isPartnerReady = if (isHomePreview) isPreviewPartnerReady else game.playingGameId == route.gameId,
+                hasStatusError = !isHomePreview && game.hasStatusError,
                 onReady = {
                     navigation.navigate(OperationProgressRoute(route.missionIds, route.penaltyId)) {
                         popUpTo<OperationWaitingRoute> { inclusive = true }
@@ -265,16 +297,26 @@ internal fun HilkkeumNavHost(
             val roundState = navigation.previousBackStackEntry?.savedStateHandle ?: entry.savedStateHandle
             val missionLabels = stringArrayResource(R.array.operation_sample_missions)
             val partnerGuesses = stringArrayResource(R.array.mission_judge_sample_partner_guesses)
-            val context = LocalContext.current
             MissionJudgementScreen(
                 ownMissions = route.missionIds.map { id -> missionLabels.getOrNull(id - 1).orEmpty() },
                 partnerGuesses = partnerGuesses.take(route.missionIds.size),
                 savedCorrectIndices = roundState.get<ArrayList<Int>>(MissionJudgementsKey).orEmpty(),
                 onResult = { correctIndices ->
                     roundState[MissionJudgementsKey] = ArrayList(correctIndices)
-                    Toast.makeText(context, R.string.mission_judge_saved, Toast.LENGTH_SHORT).show()
+                    navigation.navigate(OperationResultRoute(correctIndices.size)) {
+                        launchSingleTop = true
+                    }
                 },
             )
+        }
+        composable<OperationResultRoute> { entry ->
+            val route = entry.toRoute<OperationResultRoute>()
+            OperationResultScreen(partnerCorrectCount = route.partnerCorrectCount, onFinish = {
+                navigation.navigate(WishCouponRoute) {
+                    popUpTo<TemporaryHomeRoute>()
+                    launchSingleTop = true
+                }
+            })
         }
     }
 }
