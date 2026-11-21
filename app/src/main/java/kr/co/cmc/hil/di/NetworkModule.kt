@@ -78,7 +78,7 @@ object NetworkModule {
                     Log.d(LOG_TAG, message)
                 }
             }
-            level = if (BuildConfig.DEBUG) LogLevel.BODY else LogLevel.NONE
+            level = if (BuildConfig.DEBUG) LogLevel.HEADERS else LogLevel.NONE
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
     }

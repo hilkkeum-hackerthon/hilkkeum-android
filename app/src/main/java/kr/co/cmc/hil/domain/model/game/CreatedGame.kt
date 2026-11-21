@@ -10,4 +10,5 @@ data class CreatedGame(
     val roomId: RoomId,
     val dateType: DateType,
     val missionCount: Int,
+    val status: String,
 )

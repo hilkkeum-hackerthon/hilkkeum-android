@@ -30,6 +30,7 @@ internal fun OperationWaitingScreen(
     isPartnerReady: Boolean,
     onReady: () -> Unit,
     onDebugConfirm: (() -> Unit)? = null,
+    hasStatusError: Boolean = false,
 ) {
     LaunchedEffect(isPartnerReady) {
         if (isPartnerReady) onReady()

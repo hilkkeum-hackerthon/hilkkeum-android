@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -71,7 +72,9 @@ private val InvitationFont = FontFamily(
 fun InvitationScreen(
     onBack: () -> Unit,
     shareCode: String? = null,
-    onJoin: ((String) -> Boolean)? = null,
+    onJoin: ((String) -> Unit)? = null,
+    waitingMessage: String? = null,
+    isSubmitting: Boolean = false,
 ) {
     var enteredCode by rememberSaveable { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -79,16 +82,16 @@ fun InvitationScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val copyLabel = stringResource(R.string.invitation_copy)
+    val copiedMessage = stringResource(R.string.invitation_copied)
     val emptyMessage = stringResource(R.string.invitation_hint)
-    val unavailable = stringResource(R.string.entrance_invite_unavailable)
-    val invalid = stringResource(R.string.invitation_invalid_code)
     val submit: () -> Unit = {
         keyboard?.hide()
         val message = when {
             enteredCode.isBlank() -> emptyMessage
-            onJoin == null -> unavailable
-            onJoin(enteredCode) -> null
-            else -> invalid
+            else -> {
+                onJoin?.invoke(enteredCode)
+                null
+            }
         }
         if (message != null) {
             scope.launch {
@@ -108,15 +111,24 @@ fun InvitationScreen(
             enteredCode = enteredCode,
             onCodeChange = { enteredCode = it },
             onBack = onBack,
-            onSubmit = submit,
+            onSubmit = { if (!isSubmitting) submit() },
             onCopy = {
                 if (shareCode != null) {
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(copyLabel, shareCode)))
+                        snackbar.currentSnackbarData?.dismiss()
+                        snackbar.showSnackbar(copiedMessage)
                     }
                 }
             },
         )
+        if (waitingMessage != null) {
+            Text(
+                text = waitingMessage,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-64).dp),
+            )
+        }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).offset(y = (-32).dp))
     }
 }
@@ -174,6 +186,7 @@ private fun InvitationContent(
                     .clip(controlShape).background(colorResource(R.color.invitation_field))
                 if (shareCode != null) {
                     val copyLabel = stringResource(R.string.invitation_copy)
+    val copiedMessage = stringResource(R.string.invitation_copied)
                     Row(
                         modifier = fieldModifier.clickable(
                             role = Role.Button,

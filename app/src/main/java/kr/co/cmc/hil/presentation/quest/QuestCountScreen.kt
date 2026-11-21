@@ -43,10 +43,11 @@ private const val MinimumMissionCount = 1
 private const val MaximumMissionCount = 3
 
 @Composable
-fun QuestCountScreen(onNext: (Int) -> Unit) {
+fun QuestCountScreen(isSubmitting: Boolean = false, onNext: (Int) -> Unit) {
     var count by rememberSaveable { mutableIntStateOf(MaximumMissionCount) }
     QuestCountContent(
         count = count,
+        isSubmitting = isSubmitting,
         onDecrease = { count = (count - 1).coerceAtLeast(MinimumMissionCount) },
         onIncrease = { count = (count + 1).coerceAtMost(MaximumMissionCount) },
         onNext = { onNext(count) },
@@ -56,6 +57,7 @@ fun QuestCountScreen(onNext: (Int) -> Unit) {
 @Composable
 private fun QuestCountContent(
     count: Int,
+    isSubmitting: Boolean,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
     onNext: () -> Unit,
@@ -123,6 +125,7 @@ private fun QuestCountContent(
                 )
                 Button(
                     onClick = onNext,
+                    enabled = !isSubmitting,
                     modifier = Modifier.align(Alignment.BottomCenter)
                         .offset(x = 4.dp * scale)
                         .padding(bottom = 78.dp * scale)

@@ -7,6 +7,7 @@ data class Game(
     val gameId: GameId,
     val dateType: DateType,
     val missionCount: Int,
+    val status: String,
     val mySelectionCompleted: Boolean,
     val partnerSelectionCompleted: Boolean,
     val endRequestPending: Boolean,

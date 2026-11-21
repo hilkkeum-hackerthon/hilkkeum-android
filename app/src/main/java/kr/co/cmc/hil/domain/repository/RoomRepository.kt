@@ -6,8 +6,11 @@ import kr.co.cmc.hil.domain.model.room.CreatedRoom
 import kr.co.cmc.hil.domain.model.room.JoinedRoom
 import kr.co.cmc.hil.domain.model.room.Room
 import kr.co.cmc.hil.domain.model.room.RoomId
+import kr.co.cmc.hil.domain.model.room.RoomSession
 
 interface RoomRepository {
+    suspend fun restoreSession(): AppResult<RoomSession?, AppError.Network>
+    suspend fun clearSession(): AppResult<Unit, AppError.Network>
 
     /**
      * 새 방을 만들고, 성공하면 발급된 memberToken을 로컬에 저장한다.
