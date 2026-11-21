@@ -1,8 +1,12 @@
 package kr.co.cmc.hil.di
 
+import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.data.repositoryimpl.RoomRepositoryImpl
+import kr.co.cmc.hil.domain.repository.RoomRepository
+import javax.inject.Singleton
 
 /**
  * Repository 인터페이스(domain)와 구현체(data)를 연결한다.
@@ -21,4 +25,7 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
+    @Binds
+    @Singleton
+    abstract fun bindRoomRepository(impl: RoomRepositoryImpl): RoomRepository
 }
