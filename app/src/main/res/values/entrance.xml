@@ -3,7 +3,8 @@
     <string name="entrance_subtitle">서브 텍스트</string>
     <string name="entrance_invite">초대 코드 입력하기</string>
     <string name="entrance_create_room">새로운 방 만들기</string>
-    <string name="entrance_invite_unavailable">초대 코드 입장은 아직 준비 중이에요.</string>
+    <string name="entrance_invite_card_title">공유받은 초대 코드 입력</string>
+    <string name="entrance_invite_confirm">확인</string>
 
     <color name="entrance_background">#121212</color>
     <color name="entrance_gradient_top">#33FF652F</color>
@@ -13,4 +14,12 @@
     <color name="entrance_create_text">#000000</color>
     <color name="entrance_invite_background">#ECECEC</color>
     <color name="entrance_invite_text">#353535</color>
+    <!-- 초대 코드 입력 카드가 열린 상태 (Figma basic frame 21:1245) -->
+    <color name="entrance_open_gradient_top">#33666666</color>
+    <color name="entrance_open_panel_bottom">#1F666666</color>
+    <color name="entrance_open_subtitle_text">#FAFAFA</color>
+    <color name="entrance_open_invite_text">#292929</color>
+    <color name="entrance_card_background">#292929</color>
+    <color name="entrance_card_field">#434343</color>
+    <color name="entrance_card_hint">#868686</color>
 </resources>

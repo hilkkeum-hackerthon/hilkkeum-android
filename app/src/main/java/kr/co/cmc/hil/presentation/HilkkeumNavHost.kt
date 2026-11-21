@@ -63,9 +63,6 @@ import kotlinx.serialization.Serializable
 private object EntranceRoute
 
 @Serializable
-private object EnterInvitationRoute
-
-@Serializable
 private object ShareInvitationRoute
 
 @Serializable
@@ -195,9 +192,7 @@ internal fun HilkkeumNavHost(
         if (isHomePreview) return@LaunchedEffect
         val destination = navigation.currentDestination
         if (room.session == null) {
-            if (destination?.hasRoute<EntranceRoute>() == false &&
-                !destination.hasRoute<EnterInvitationRoute>()
-            ) {
+            if (destination?.hasRoute<EntranceRoute>() == false) {
                 navigation.navigate(EntranceRoute) {
                     popUpTo(navigation.graph.id)
                     launchSingleTop = true
@@ -247,15 +242,9 @@ internal fun HilkkeumNavHost(
         }
         composable<EntranceRoute> {
             EntranceScreen(
-                onEnterInviteCode = { navigation.navigate(EnterInvitationRoute) },
                 onCreateRoom = { roomEntryViewModel.onAction(RoomEntryAction.Create) },
-            )
-        }
-        composable<EnterInvitationRoute> {
-            InvitationScreen(
-                onBack = { navigation.popBackStack() },
-                isSubmitting = room.isSubmitting,
                 onJoin = { roomEntryViewModel.onAction(RoomEntryAction.Join(it)) },
+                isSubmitting = room.isSubmitting,
             )
         }
         composable<ShareInvitationRoute> {
