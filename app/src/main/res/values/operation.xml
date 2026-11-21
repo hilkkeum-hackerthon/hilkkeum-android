@@ -35,4 +35,18 @@
     <color name="operation_dim_text">#6E6E6E</color>
     <color name="operation_idle_dot">#4A4A4A</color>
     <color name="operation_orange_light">#FFB89F</color>
+    <string name="operation_result_header">작전 마무리</string>
+    <string name="operation_result_open_hint">초대장을 열어\n결과를 확인해 보세요</string>
+    <string name="operation_result_open_envelope">결과 봉투 열기</string>
+    <string name="operation_result_grading">상대방의 채점을 기다리고 있어요</string>
+    <string name="operation_result_intro">이번 작전은…</string>
+    <string name="operation_result_win">승리!</string>
+    <string name="operation_result_loss">패배</string>
+    <string name="operation_result_tie">동점</string>
+    <string name="operation_result_sample_stamp">스탬프 1개 적립 완료</string>
+    <string name="operation_result_penalty_hint">상대가 선택한 벌칙을 수행해야 해요</string>
+    <string name="operation_result_tie_hint">두 사람의 점수가 같아요</string>
+    <string name="operation_result_sample_penalty">오늘의 패배 소감을\n시상식처럼 말하기</string>
+    <string name="operation_result_stamp_number">01</string>
+    <string name="operation_result_stamp_date">2026.01.24</string>
 </resources>
