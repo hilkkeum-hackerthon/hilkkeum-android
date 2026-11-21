@@ -5,6 +5,7 @@ import kr.co.cmc.hil.data.dto.coupon.CouponStatusDto
 import kr.co.cmc.hil.data.dto.coupon.CouponUseRequestResponseDto
 import kr.co.cmc.hil.data.dto.coupon.CouponsResponseDto
 import kr.co.cmc.hil.data.dto.coupon.ExchangeCouponResponseDto
+import kr.co.cmc.hil.data.dto.coupon.IncomingCouponResponseDto
 import kr.co.cmc.hil.data.dto.coupon.RespondCouponUseResponseDto
 import kr.co.cmc.hil.domain.model.coupon.Coupon
 import kr.co.cmc.hil.domain.model.coupon.CouponId
@@ -12,6 +13,7 @@ import kr.co.cmc.hil.domain.model.coupon.CouponStatus
 import kr.co.cmc.hil.domain.model.coupon.CouponUseRequest
 import kr.co.cmc.hil.domain.model.coupon.CouponUseResponse
 import kr.co.cmc.hil.domain.model.coupon.ExchangedCoupon
+import kr.co.cmc.hil.domain.model.coupon.IncomingCouponRequest
 import kr.co.cmc.hil.domain.model.room.MemberId
 
 /**
@@ -46,6 +48,14 @@ fun RespondCouponUseResponseDto.toDomain(): CouponUseResponse = CouponUseRespons
     couponId = CouponId(couponId),
     approved = approved,
     usedAt = usedAt,
+)
+
+/**
+ * 받은 소원권 사용 요청 응답을 도메인 모델 [IncomingCouponRequest]로 변환한다.
+ */
+fun IncomingCouponResponseDto.toDomain(): IncomingCouponRequest = IncomingCouponRequest(
+    couponId = CouponId(couponId),
+    requestedAt = requestedAt,
 )
 
 /**

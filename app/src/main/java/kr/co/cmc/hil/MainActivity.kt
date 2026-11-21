@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import kr.co.cmc.hil.presentation.HilkkeumNavHost
+import kr.co.cmc.hil.presentation.coupon.approval.CouponApprovalViewModel
 import kr.co.cmc.hil.presentation.invitation.RoomEntryViewModel
 import kr.co.cmc.hil.presentation.quest.GameSetupViewModel
 import kr.co.cmc.hil.presentation.stamp.WishCouponViewModel
@@ -21,6 +22,8 @@ class MainActivity : ComponentActivity() {
 
     private val gameSetupViewModel: GameSetupViewModel by viewModels()
 
+    private val couponApprovalViewModel: CouponApprovalViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -29,7 +32,13 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             HilkkeumTheme {
-                HilkkeumNavHost(wishCouponViewModel, roomEntryViewModel, gameSetupViewModel, onClose = ::finish)
+                HilkkeumNavHost(
+                    wishCouponViewModel = wishCouponViewModel,
+                    couponApprovalViewModel = couponApprovalViewModel,
+                    roomEntryViewModel = roomEntryViewModel,
+                    gameSetupViewModel = gameSetupViewModel,
+                    onClose = ::finish,
+                )
             }
         }
     }
