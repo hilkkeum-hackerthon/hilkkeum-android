@@ -10,6 +10,7 @@ import kr.co.cmc.hil.R
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.model.game.DateType
 import kr.co.cmc.hil.domain.model.game.GameId
+import kr.co.cmc.hil.domain.model.game.GameStatus
 import kr.co.cmc.hil.domain.model.game.GuessId
 import kr.co.cmc.hil.domain.model.room.RoomSession
 import kr.co.cmc.hil.domain.usecase.game.CreateGameUseCase
@@ -67,7 +68,6 @@ internal sealed interface GameSetupEvent {
 }
 
 private const val GameStatusPollIntervalMillis = 3_000L
-private const val PlayingStatus = "PLAYING"
 
 @HiltViewModel
 internal class GameSetupViewModel @Inject constructor(
@@ -128,14 +128,14 @@ internal class GameSetupViewModel @Inject constructor(
                     val status = result.data.status
                     updateState {
                         it.copy(
-                            playingGameId = gameId.takeIf { status == PlayingStatus },
-                            guessingGameId = gameId.takeIf { status == "GUESSING" },
-                            finishedGameId = gameId.takeIf { status == "FINISHED" },
+                            playingGameId = gameId.takeIf { status == GameStatus.PLAYING },
+                            guessingGameId = gameId.takeIf { status == GameStatus.GUESSING },
+                            finishedGameId = gameId.takeIf { status == GameStatus.FINISHED },
                             hasStatusError = false,
                         )
                     }
-                    if (status == "FINISHED") return
-                    if (fetchGuesses && status == "GUESSING") {
+                    if (status == GameStatus.FINISHED) return
+                    if (fetchGuesses && status == GameStatus.GUESSING) {
                         when (val guesses = getReceivedGuesses(GameId(gameId))) {
                             is AppResult.Success -> updateState { it.copy(receivedGuesses = guesses.data) }
                             is AppResult.Error -> updateState { it.copy(hasStatusError = true) }
@@ -190,7 +190,7 @@ internal class GameSetupViewModel @Inject constructor(
                 if (selections.isNotEmpty() && selections.size == action.indices.size) {
                     when (selectMissions(GameId(action.gameId), selections.map { it.id })) {
                         is AppResult.Success -> emitEvent(GameSetupEvent.MissionsSubmitted(selections.map { it.content }))
-                        is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_selection_failed))
+                        is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_select_missions_failed))
                     }
                 }
             }
@@ -199,14 +199,14 @@ internal class GameSetupViewModel @Inject constructor(
                 if (penalty != null) {
                     when (selectPenalty(GameId(action.gameId), penalty.id)) {
                         is AppResult.Success -> emitEvent(GameSetupEvent.PenaltySubmitted(penalty.content))
-                        is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_selection_failed))
+                        is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_select_penalty_failed))
                     }
                 }
             }
             is GameSetupAction.End -> runRequest {
                 when (endGame(GameId(action.gameId))) {
                     is AppResult.Success -> updateState { it.copy(guessingGameId = action.gameId) }
-                    is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_selection_failed))
+                    is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_end_failed))
                 }
             }
             is GameSetupAction.SubmitGuesses -> runRequest {

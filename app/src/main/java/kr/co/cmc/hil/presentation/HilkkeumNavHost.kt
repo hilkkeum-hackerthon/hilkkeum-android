@@ -34,6 +34,7 @@ import kr.co.cmc.hil.presentation.coupon.approval.CouponApprovalScreen
 import kr.co.cmc.hil.presentation.coupon.approval.CouponApprovalViewModel
 import kr.co.cmc.hil.presentation.entrance.EntranceScreen
 import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
+import kr.co.cmc.hil.presentation.howto.HowToScreen
 import kr.co.cmc.hil.presentation.invitation.InvitationScreen
 import kr.co.cmc.hil.presentation.invitation.RoomEntryAction
 import kr.co.cmc.hil.presentation.invitation.RoomEntryViewModel
@@ -67,6 +68,9 @@ private object ShareInvitationRoute
 
 @Serializable
 private object TemporaryHomeRoute
+
+@Serializable
+private object HowToRoute
 
 @Serializable
 private object WishCouponRoute
@@ -211,12 +215,16 @@ internal fun HilkkeumNavHost(
         composable<TemporaryHomeRoute> {
             TemporaryHomeScreen(
                 onStartMission = { navigation.navigate(QuestModeRoute) { launchSingleTop = true } },
+                onHowTo = { navigation.navigate(HowToRoute) { launchSingleTop = true } },
                 onStamp = { navigation.navigate(WishCouponRoute) { launchSingleTop = true } },
                 hasIncomingCouponRequest = wishCoupon.hasIncomingRequest,
                 onOpenCouponRequest = {
                     wishCoupon.incomingRequest?.let { openCouponApproval(it.couponId.value) }
                 },
             )
+        }
+        composable<HowToRoute> {
+            HowToScreen(onBack = { navigation.popBackStack() })
         }
         composable<WishCouponRoute> {
             WishCouponScreen(
