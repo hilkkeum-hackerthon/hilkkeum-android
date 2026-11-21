@@ -2,7 +2,20 @@ package kr.co.cmc.hil.presentation
 
 import android.content.pm.ApplicationInfo
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,6 +31,8 @@ import kr.co.cmc.hil.R
 import kr.co.cmc.hil.presentation.entrance.EntranceScreen
 import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
 import kr.co.cmc.hil.presentation.invitation.InvitationScreen
+import kr.co.cmc.hil.presentation.invitation.RoomEntryAction
+import kr.co.cmc.hil.presentation.invitation.RoomEntryViewModel
 import kr.co.cmc.hil.presentation.quest.QuestCountScreen
 import kr.co.cmc.hil.presentation.quest.QuestMode
 import kr.co.cmc.hil.presentation.quest.QuestModeScreen
@@ -74,10 +89,44 @@ private const val SubmittedMissionGuessesKey = "submittedMissionGuesses"
 private const val MissionJudgementsKey = "missionJudgements"
 
 @Composable
-internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
+internal fun HilkkeumNavHost(
+    wishCouponViewModel: WishCouponViewModel,
+    roomEntryViewModel: RoomEntryViewModel,
+    onClose: () -> Unit,
+) {
+    val room by roomEntryViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    LaunchedEffect(roomEntryViewModel, context) {
+        roomEntryViewModel.event.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
+    if (room.isRestoring) {
+        RoomStatusScreen()
+        return
+    }
     val navigation = rememberNavController()
     val appFlags = LocalContext.current.applicationInfo.flags
     val isDebuggable = (appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    LaunchedEffect(room.session, room.isPaired) {
+        val destination = navigation.currentDestination
+        if (room.session == null) {
+            if (destination?.hasRoute<EntranceRoute>() == false &&
+                !destination.hasRoute<EnterInvitationRoute>()
+            ) {
+                navigation.navigate(EntranceRoute) {
+                    popUpTo(navigation.graph.id)
+                    launchSingleTop = true
+                }
+            }
+        } else if (room.isPaired) {
+            if (destination?.hasRoute<ShareInvitationRoute>() == true ||
+                destination?.hasRoute<EntranceRoute>() == true
+            ) {
+                navigation.navigate(TemporaryHomeRoute) { popUpTo(navigation.graph.id) }
+            }
+        } else if (destination?.hasRoute<ShareInvitationRoute>() != true) {
+            navigation.navigate(ShareInvitationRoute) { popUpTo(navigation.graph.id) }
+        }
+    }
     NavHost(navigation, startDestination = EntranceRoute) {
         composable<TemporaryHomeRoute> {
             TemporaryHomeScreen(
@@ -94,30 +143,36 @@ internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
         composable<EntranceRoute> {
             EntranceScreen(
                 onEnterInviteCode = { navigation.navigate(EnterInvitationRoute) },
-                onCreateRoom = { navigation.navigate(ShareInvitationRoute) },
+                onCreateRoom = { roomEntryViewModel.onAction(RoomEntryAction.Create) },
             )
         }
         composable<EnterInvitationRoute> {
-            val sampleCode = stringResource(R.string.invitation_sample_code)
             InvitationScreen(
                 onBack = { navigation.popBackStack() },
-                onJoin = if (isDebuggable) ({ input ->
-                    val matches = input.trim().equals(sampleCode, ignoreCase = true)
-                    if (matches) {
-                        navigation.navigate(TemporaryHomeRoute) {
-                            popUpTo<EnterInvitationRoute> { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                    matches
-                }) else null,
+                isSubmitting = room.isSubmitting,
+                onJoin = { roomEntryViewModel.onAction(RoomEntryAction.Join(it)) },
             )
         }
         composable<ShareInvitationRoute> {
-            InvitationScreen(
-                onBack = { navigation.popBackStack() },
-                shareCode = stringResource(R.string.invitation_sample_code),
-            )
+            val session = room.session
+            if (session != null) {
+                LifecycleStartEffect(session.roomId) {
+                    roomEntryViewModel.onAction(RoomEntryAction.ObserveStatus(true))
+                    onStopOrDispose {
+                        roomEntryViewModel.onAction(RoomEntryAction.ObserveStatus(false))
+                    }
+                }
+                val message = stringResource(room.statusError ?: R.string.room_waiting_for_partner)
+                if (session.inviteCode != null) {
+                    InvitationScreen(
+                        onBack = onClose,
+                        shareCode = session.inviteCode,
+                        waitingMessage = message,
+                    )
+                } else {
+                    RoomStatusScreen(message)
+                }
+            }
         }
         composable<QuestModeRoute> {
             QuestModeScreen(onNext = { mode ->
@@ -203,5 +258,16 @@ internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
                 },
             )
         }
+    }
+}
+
+@Composable
+private fun RoomStatusScreen(message: String? = null) {
+    Box(
+        Modifier.fillMaxSize().background(colorResource(R.color.entrance_background)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (message == null) CircularProgressIndicator()
+        else Text(text = message, color = Color.White)
     }
 }
