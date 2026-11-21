@@ -1,5 +1,6 @@
 package kr.co.cmc.hil.presentation.stamp
 
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,9 +21,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,9 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,9 +49,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kr.co.cmc.hil.R
-import kr.co.cmc.hil.domain.model.StampsPerWish
-import kr.co.cmc.hil.domain.model.WishStampProgress
+import kr.co.cmc.hil.domain.model.coupon.Coupon
+import kr.co.cmc.hil.domain.model.coupon.CouponId
+import kr.co.cmc.hil.domain.model.coupon.CouponStatus
+import kr.co.cmc.hil.domain.model.room.MemberId
+import kr.co.cmc.hil.domain.model.stamp.Stamps
+import kr.co.cmc.hil.presentation.common.CouponRequestBanner
 import kr.co.cmc.hil.presentation.common.HomeStampToggle
 
 private val WishFont = FontFamily(
@@ -58,39 +68,75 @@ private val WishFont = FontFamily(
 
 private const val RoadOrigin = 136f
 private const val CycleSpacing = 690f
+private const val ButtonAreaHeight = 160f
 
 @Composable
-internal fun WishCouponScreen(viewModel: WishCouponViewModel, onHome: () -> Unit) {
-    val progress by viewModel.uiState.collectAsStateWithLifecycle()
-
+internal fun WishCouponScreen(
+    viewModel: WishCouponViewModel,
+    onHome: () -> Unit,
+    onOpenCouponRequest: (Long) -> Unit,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showTicket by rememberSaveable { mutableStateOf(false) }
 
+    LaunchedEffect(viewModel) {
+        viewModel.onAction(WishCouponAction.Refresh)
+    }
+    LaunchedEffect(viewModel, context) {
+        viewModel.event.collect { event ->
+            when (event) {
+                WishCouponEvent.ExchangeCompleted -> showTicket = true
+                WishCouponEvent.UseRequested -> showTicket = false
+                is WishCouponEvent.ShowMessage ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     WishCouponContent(
-        progress = progress,
-        onHome = onHome,
-        onOpen = { showTicket = true },
+        uiState = uiState,
         showHelp = showHelp,
         onHelp = { showHelp = !showHelp },
+        onHome = onHome,
+        onCouponButton = {
+            when (uiState.buttonState) {
+                WishCouponButtonState.Exchangeable -> viewModel.onAction(WishCouponAction.Exchange)
+                WishCouponButtonState.Usable -> {
+                    viewModel.onAction(WishCouponAction.ClearUseRequestError)
+                    showTicket = true
+                }
+                WishCouponButtonState.Locked, WishCouponButtonState.Pending -> Unit
+            }
+        },
+        onOpenCouponRequest = {
+            uiState.incomingRequest?.let { onOpenCouponRequest(it.couponId.value) }
+        },
+        onAction = viewModel::onAction,
     )
-    if (showTicket && progress.availableWishes > 0) {
+
+    val ticketCoupon = uiState.activeCoupon
+    if (showTicket && ticketCoupon != null && ticketCoupon.status == CouponStatus.AVAILABLE) {
         WishTicketDialog(
+            coupon = ticketCoupon,
+            isSubmitting = uiState.isRequestingUse,
+            hasError = uiState.hasUseRequestError,
             onDismiss = { showTicket = false },
-            onUse = {
-                showTicket = false
-                viewModel.onAction(WishCouponAction.UseWish)
-            },
+            onUse = { viewModel.onAction(WishCouponAction.RequestUse) },
         )
     }
 }
 
 @Composable
 private fun WishCouponContent(
-    progress: WishStampProgress,
-    onHome: () -> Unit,
-    onOpen: () -> Unit,
+    uiState: WishCouponUiState,
     showHelp: Boolean,
     onHelp: () -> Unit,
+    onHome: () -> Unit,
+    onCouponButton: () -> Unit,
+    onOpenCouponRequest: () -> Unit,
+    onAction: (WishCouponAction) -> Unit,
 ) {
     val background = colorResource(R.color.entrance_background)
     val gradient = Brush.verticalGradient(
@@ -102,18 +148,25 @@ private fun WishCouponContent(
         BoxWithConstraints(Modifier.widthIn(max = 480.dp).fillMaxSize()) {
             val factor = maxWidth / 360.dp
             Column(Modifier.fillMaxSize()) {
-                WishHeader(progress, showHelp, onHelp, factor)
+                WishHeader(uiState, showHelp, onHelp, factor)
+                if (uiState.hasIncomingRequest) {
+                    CouponRequestBanner(
+                        onClick = onOpenCouponRequest,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp * factor),
+                        scale = factor,
+                    )
+                }
                 Box(Modifier.weight(1f).fillMaxWidth()) {
-                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                        for (index in 0..progress.usedWishes) {
-                            val isCompleted = index < progress.usedWishes
-                            WishRoadCycle(
-                                dates = progress.datesInCycle(index),
-                                isCompleted = isCompleted,
-                                isFirst = index == 0,
-                                isAvailable = !isCompleted && progress.availableWishes > 0,
-                                onOpen = onOpen,
-                                factor = factor,
+                    if (uiState.hasLoadError) {
+                        WishLoadError(onRetry = { onAction(WishCouponAction.Refresh) }, factor = factor)
+                    } else {
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                            WishRoad(uiState, onCouponButton, factor)
+                        }
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center),
+                                color = colorResource(R.color.entrance_create_background),
                             )
                         }
                     }
@@ -129,50 +182,31 @@ private fun WishCouponContent(
 }
 
 @Composable
-private fun WishRoadCycle(
-    dates: List<String>,
-    isCompleted: Boolean,
-    isFirst: Boolean,
-    isAvailable: Boolean,
-    onOpen: () -> Unit,
-    factor: Float,
-) {
-    val origin = if (isFirst) RoadOrigin else 0f
-    val height = CycleSpacing - origin
+private fun WishRoad(uiState: WishCouponUiState, onCouponButton: () -> Unit, factor: Float) {
+    val height = CycleSpacing - RoadOrigin + ButtonAreaHeight
 
-    Box(
-        Modifier.fillMaxWidth()
-            .heightIn(min = (height + if (isCompleted) 0f else 160f).dp * factor),
-    ) {
-        if (isFirst) {
-            WishImage(R.drawable.wish_route, 56f, 200f - origin, 269.431f, 425f, factor)
-            WishImage(R.drawable.wish_start, 17.865f, 165.865f - origin, 76.2697f, 76.2697f, factor)
-            Box(
-                Modifier.offset(16.dp * factor, (164f - origin).dp * factor).size(80.dp * factor),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(R.string.wish_coupon_start),
-                    style = wishStyle(20f * factor, FontWeight.SemiBold),
-                    color = Color.White,
-                )
-            }
-        } else {
-            WishImage(
-                R.drawable.wish_continuation, 39f, 0f, 269.431f, 425f, factor,
-                modifier = Modifier.scale(scaleX = -1f, scaleY = 1f),
+    Box(Modifier.fillMaxWidth().heightIn(min = height.dp * factor)) {
+        WishImage(R.drawable.wish_route, 56f, 200f - RoadOrigin, 269.431f, 425f, factor)
+        WishImage(R.drawable.wish_start, 17.865f, 165.865f - RoadOrigin, 76.2697f, 76.2697f, factor)
+        Box(
+            Modifier.offset(16.dp * factor, (164f - RoadOrigin).dp * factor).size(80.dp * factor),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                stringResource(R.string.wish_coupon_start),
+                style = wishStyle(20f * factor, FontWeight.SemiBold),
+                color = Color.White,
             )
-            WishImage(R.drawable.wish_route, 56f, 200f, 269.431f, 425f, factor)
         }
-        WishStamp(1, 274f, 190f - origin, R.drawable.wish_green, dates.getOrNull(0), factor)
-        WishStamp(2, 79f, 350f - origin, R.drawable.wish_blue, dates.getOrNull(1), factor)
-        WishStamp(3, 274f, 419f - origin, R.drawable.wish_purple, dates.getOrNull(2), factor)
-        ExchangeButton(isAvailable, isCompleted, 575f - origin, onOpen, factor)
+        WishStamp(1, 274f, 190f - RoadOrigin, R.drawable.wish_green, uiState.heartCount >= 1, factor)
+        WishStamp(2, 79f, 350f - RoadOrigin, R.drawable.wish_blue, uiState.heartCount >= 2, factor)
+        WishStamp(3, 274f, 419f - RoadOrigin, R.drawable.wish_purple, uiState.heartCount >= 3, factor)
+        CouponButton(uiState.buttonState, uiState.isExchanging, 575f - RoadOrigin, onCouponButton, factor)
     }
 }
 
 @Composable
-private fun WishHeader(progress: WishStampProgress, showHelp: Boolean, onHelp: () -> Unit, factor: Float) {
+private fun WishHeader(uiState: WishCouponUiState, showHelp: Boolean, onHelp: () -> Unit, factor: Float) {
     val background = colorResource(R.color.entrance_background)
 
     Column(Modifier.fillMaxWidth().background(background).padding(top = 24.dp * factor)) {
@@ -197,7 +231,7 @@ private fun WishHeader(progress: WishStampProgress, showHelp: Boolean, onHelp: (
         }
         if (showHelp) {
             Text(
-                text = stringResource(R.string.wish_coupon_help_body, StampsPerWish),
+                text = stringResource(R.string.wish_coupon_help_body, uiState.maxHearts),
                 color = colorResource(R.color.wish_coupon_label),
                 style = wishStyle(12f * factor),
                 modifier = Modifier.fillMaxWidth()
@@ -207,26 +241,42 @@ private fun WishHeader(progress: WishStampProgress, showHelp: Boolean, onHelp: (
             )
         } else {
             Column(
-                modifier = Modifier.padding(start = 16.dp * factor, bottom = 12.dp * factor),
+                modifier = Modifier.padding(start = 16.dp * factor, end = 16.dp * factor, bottom = 12.dp * factor),
                 verticalArrangement = Arrangement.spacedBy(4.dp * factor),
             ) {
                 WishSummary(
                     stringResource(R.string.wish_coupon_stamp_label),
-                    stringResource(R.string.wish_coupon_stamp_count, progress.stampCount, StampsPerWish),
+                    stringResource(R.string.wish_coupon_stamp_count, uiState.heartCount, uiState.maxHearts),
                     7f, factor,
                 )
                 WishSummary(
                     stringResource(R.string.wish_coupon_available_label),
-                    stringResource(R.string.wish_coupon_available_count, progress.availableWishes),
+                    stringResource(R.string.wish_coupon_available_count, uiState.availableCouponCount),
                     4f, factor,
+                    badge = uiState.activeCoupon?.let { dDayLabel(it.remainingDays) },
                 )
+                if (uiState.showFullWarning) {
+                    Text(
+                        text = stringResource(R.string.wish_coupon_full_warning),
+                        color = colorResource(R.color.entrance_create_background),
+                        style = wishStyle(12f * factor),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun WishSummary(label: String, value: String, gap: Float, factor: Float) {
+private fun dDayLabel(remainingDays: Int): String =
+    if (remainingDays > 0) {
+        stringResource(R.string.wish_coupon_dday, remainingDays)
+    } else {
+        stringResource(R.string.wish_coupon_dday_today)
+    }
+
+@Composable
+private fun WishSummary(label: String, value: String, gap: Float, factor: Float, badge: String? = null) {
     Row(horizontalArrangement = Arrangement.spacedBy(gap.dp * factor)) {
         Text(label, color = colorResource(R.color.wish_coupon_label), style = wishStyle(14f * factor))
         Text(
@@ -234,6 +284,35 @@ private fun WishSummary(label: String, value: String, gap: Float, factor: Float)
             color = colorResource(R.color.wish_coupon_value),
             style = wishStyle(14f * factor, FontWeight.Medium),
         )
+        if (badge != null) {
+            Text(
+                badge,
+                color = colorResource(R.color.entrance_create_background),
+                style = wishStyle(14f * factor, FontWeight.SemiBold),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WishLoadError(onRetry: () -> Unit, factor: Float) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp * factor),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            stringResource(R.string.wish_coupon_load_failed),
+            color = colorResource(R.color.wish_coupon_value),
+            style = wishStyle(14f * factor),
+        )
+        TextButton(onClick = onRetry) {
+            Text(
+                stringResource(R.string.wish_coupon_retry),
+                color = colorResource(R.color.entrance_create_background),
+                style = wishStyle(14f * factor, FontWeight.SemiBold),
+            )
+        }
     }
 }
 
@@ -243,11 +322,21 @@ private fun WishStamp(
     center: Float,
     top: Float,
     @DrawableRes earnedImage: Int,
-    date: String?,
+    isEarned: Boolean,
     factor: Float,
 ) {
     val slotNumber = stringResource(R.string.wish_coupon_slot, number)
-    if (date == null) {
+    if (isEarned) {
+        WishImage(earnedImage, center - 61.969f, top + 3.031f, 123.938f, 123.938f, factor)
+        WishImage(R.drawable.wish_white_outline, center - 52.4355f, top + 12.5645f, 104.871f, 104.871f, factor)
+        Box(
+            Modifier.offset((center - 65f).dp * factor, (top + 3.031f).dp * factor)
+                .size(130.dp * factor, 123.938.dp * factor),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(slotNumber, color = Color.White, style = wishStyle(28f * factor, FontWeight.SemiBold))
+        }
+    } else {
         val lockedCenter = center + if (number == 3) 2.5f else 0f
         val lockedTop = top + if (number == 3) 8f else 12.5f
         WishImage(R.drawable.wish_locked, lockedCenter - 50.2675f, lockedTop + 2.23f, 100.535f, 100.535f, factor)
@@ -263,61 +352,45 @@ private fun WishStamp(
                 style = wishStyle(18f * factor, FontWeight.Medium),
             )
         }
-    } else {
-        WishImage(earnedImage, center - 61.969f, top + 3.031f, 123.938f, 123.938f, factor)
-        WishImage(R.drawable.wish_white_outline, center - 52.4355f, top + 12.5645f, 104.871f, 104.871f, factor)
-        WishImage(R.drawable.wish_divider, center - 39.25f, top + 71.5f, 78.5f, 1f, factor)
-        Box(
-            Modifier.offset((center - 65f).dp * factor, (top + 30f).dp * factor)
-                .size(130.dp * factor, 40.dp * factor),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            Text(slotNumber, color = Color.White, style = wishStyle(28f * factor, FontWeight.SemiBold))
-        }
-        Box(
-            Modifier.offset((center - 65f).dp * factor, (top + 80f).dp * factor)
-                .size(130.dp * factor, 20.dp * factor),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            Text(date, color = colorResource(R.color.wish_coupon_value), style = wishStyle(12f * factor))
-        }
     }
 }
 
 @Composable
-private fun ExchangeButton(
-    isEnabled: Boolean,
-    isCompleted: Boolean,
+private fun CouponButton(
+    state: WishCouponButtonState,
+    isExchanging: Boolean,
     top: Float,
-    onOpen: () -> Unit,
+    onClick: () -> Unit,
     factor: Float,
 ) {
+    val isHighlighted = state == WishCouponButtonState.Exchangeable || state == WishCouponButtonState.Usable
+    val isEnabled = isHighlighted && !isExchanging
     val outerShape = RoundedCornerShape(12.dp * factor)
-    val fill = colorResource(if (isEnabled) R.color.entrance_create_background else R.color.wish_coupon_button_disabled)
-    val stroke = if (isEnabled) Color.White else colorResource(R.color.entrance_background)
-    val text = if (isEnabled) Color.White else colorResource(R.color.wish_coupon_locked)
+    val fill = colorResource(if (isHighlighted) R.color.entrance_create_background else R.color.wish_coupon_button_disabled)
+    val stroke = if (isHighlighted) Color.White else colorResource(R.color.entrance_background)
+    val text = if (isHighlighted) Color.White else colorResource(R.color.wish_coupon_locked)
+    val label = when (state) {
+        WishCouponButtonState.Locked -> R.string.wish_coupon_title
+        WishCouponButtonState.Exchangeable -> R.string.wish_coupon_exchange
+        WishCouponButtonState.Usable -> R.string.wish_coupon_ready
+        WishCouponButtonState.Pending -> R.string.wish_coupon_pending
+    }
 
     Box(
         Modifier.offset(25.dp * factor, top.dp * factor)
             .size(180.dp * factor, 100.dp * factor)
             .clip(outerShape)
             .background(fill)
-            .clickable(enabled = isEnabled, role = Role.Button, onClick = onOpen)
+            .clickable(enabled = isEnabled, role = Role.Button, onClick = onClick)
             .padding(8.dp * factor)
             .border(3.dp * factor, stroke, outerShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            stringResource(
-                when {
-                    isCompleted -> R.string.wish_ticket_used
-                    isEnabled -> R.string.wish_coupon_ready
-                    else -> R.string.wish_coupon_title
-                },
-            ),
-            color = text,
-            style = wishStyle(20f * factor, FontWeight.SemiBold),
-        )
+        if (isExchanging) {
+            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(28.dp * factor))
+        } else {
+            Text(stringResource(label), color = text, style = wishStyle(20f * factor, FontWeight.SemiBold))
+        }
     }
 }
 
@@ -347,14 +420,44 @@ internal fun wishStyle(size: Float, weight: FontWeight = FontWeight.Normal) = Te
     letterSpacing = (-size * 0.03f).sp,
 )
 
+private fun previewState(heartCount: Int, coupon: Coupon? = null): WishCouponUiState = WishCouponUiState(
+    isLoading = false,
+    stamps = Stamps(
+        memberId = MemberId(1),
+        heartCount = heartCount,
+        maxHearts = DefaultMaxHearts,
+        canExchange = heartCount == DefaultMaxHearts && coupon == null,
+        hasActiveCoupon = coupon != null,
+    ),
+    coupon = coupon,
+)
+
+private fun previewCoupon(status: CouponStatus): Coupon {
+    val issuedAt = OffsetDateTime.of(2026, 11, 21, 20, 0, 0, 0, ZoneOffset.ofHours(9))
+
+    return Coupon(
+        couponId = CouponId(1),
+        status = status,
+        issuedAt = issuedAt,
+        expiresAt = issuedAt.plusMonths(1),
+        remainingDays = 30,
+    )
+}
+
 @Preview(widthDp = 360, heightDp = 740, name = "Two stamps")
 @Composable
 private fun WishCouponLockedPreview() {
-    WishCouponContent(WishStampProgress(listOf("2026.01.21", "2026.01.24")), {}, {}, false, {})
+    WishCouponContent(previewState(2), false, {}, {}, {}, {}, {})
 }
 
-@Preview(widthDp = 360, heightDp = 740, name = "Three stamps")
+@Preview(widthDp = 360, heightDp = 740, name = "Exchangeable")
 @Composable
-private fun WishCouponAvailablePreview() {
-    WishCouponContent(WishStampProgress(listOf("2026.01.21", "2026.01.24", "2026.01.24")), {}, {}, false, {})
+private fun WishCouponExchangeablePreview() {
+    WishCouponContent(previewState(3), false, {}, {}, {}, {}, {})
+}
+
+@Preview(widthDp = 360, heightDp = 740, name = "Coupon pending, full warning")
+@Composable
+private fun WishCouponPendingPreview() {
+    WishCouponContent(previewState(3, previewCoupon(CouponStatus.PENDING)), false, {}, {}, {}, {}, {})
 }

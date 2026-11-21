@@ -7,6 +7,7 @@ import kr.co.cmc.hil.domain.model.coupon.CouponId
 import kr.co.cmc.hil.domain.model.coupon.CouponUseRequest
 import kr.co.cmc.hil.domain.model.coupon.CouponUseResponse
 import kr.co.cmc.hil.domain.model.coupon.ExchangedCoupon
+import kr.co.cmc.hil.domain.model.coupon.IncomingCouponRequest
 
 interface CouponRepository {
 
@@ -47,4 +48,12 @@ interface CouponRepository {
         couponId: CouponId,
         approved: Boolean,
     ): AppResult<CouponUseResponse, AppError.Network>
+
+    /**
+     * 상대가 나에게 보낸 소원권 사용 요청을 조회한다. 승인 화면에서 응답할 [CouponId]를 얻는 데 쓴다.
+     * 서버 API가 아직 확정되지 않은 제안 엔드포인트(G8)라서, 서버가 404를 주면 받은 요청이 없는 것으로 본다.
+     *
+     * @return 성공하면 받은 요청(없으면 null), 실패하면 [AppError.Network]
+     */
+    suspend fun getIncomingCouponRequest(): AppResult<IncomingCouponRequest?, AppError.Network>
 }

@@ -32,8 +32,11 @@ import kotlinx.coroutines.delay
 import kr.co.cmc.hil.BuildConfig
 import kr.co.cmc.hil.R
 import kr.co.cmc.hil.domain.model.game.GameStatus
+import kr.co.cmc.hil.presentation.coupon.approval.CouponApprovalScreen
+import kr.co.cmc.hil.presentation.coupon.approval.CouponApprovalViewModel
 import kr.co.cmc.hil.presentation.entrance.EntranceScreen
 import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
+import kr.co.cmc.hil.presentation.howto.HowToScreen
 import kr.co.cmc.hil.presentation.invitation.InvitationScreen
 import kr.co.cmc.hil.presentation.invitation.RoomEntryAction
 import kr.co.cmc.hil.presentation.invitation.RoomEntryViewModel
@@ -50,6 +53,7 @@ import kr.co.cmc.hil.presentation.quest.operation.MissionJudgementScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationProgressScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationResultScreen
 import kr.co.cmc.hil.presentation.quest.operation.OperationWaitingScreen
+import kr.co.cmc.hil.presentation.stamp.WishCouponAction
 import kr.co.cmc.hil.presentation.stamp.WishCouponScreen
 import kr.co.cmc.hil.presentation.stamp.WishCouponViewModel
 import kotlinx.serialization.Serializable
@@ -68,6 +72,12 @@ private object TemporaryHomeRoute
 
 @Serializable
 private object WishCouponRoute
+
+@Serializable
+private object HowToRoute
+
+@Serializable
+private data class CouponApprovalRoute(val couponId: Long)
 
 @Serializable
 internal object QuestModeRoute
@@ -105,6 +115,7 @@ private const val MissionJudgementsKey = "missionJudgements"
 @Composable
 internal fun HilkkeumNavHost(
     wishCouponViewModel: WishCouponViewModel,
+    couponApprovalViewModel: CouponApprovalViewModel,
     roomEntryViewModel: RoomEntryViewModel,
     gameSetupViewModel: GameSetupViewModel,
     onClose: () -> Unit,
@@ -121,11 +132,25 @@ internal fun HilkkeumNavHost(
     }
     val navigation = rememberNavController()
     val game by gameSetupViewModel.uiState.collectAsStateWithLifecycle()
+    val wishCoupon by wishCouponViewModel.uiState.collectAsStateWithLifecycle()
     val currentEntry by navigation.currentBackStackEntryAsState()
     val observedGameId = if (isHomePreview) null else currentEntry?.observedGameId()
     LifecycleStartEffect(observedGameId) {
         gameSetupViewModel.onAction(GameSetupAction.Observe(observedGameId))
         onStopOrDispose { gameSetupViewModel.onAction(GameSetupAction.Observe(null)) }
+    }
+    val currentDestination = currentEntry?.destination
+    val isRewardVisible = !isHomePreview && (
+        currentDestination?.hasRoute<TemporaryHomeRoute>() == true ||
+            currentDestination?.hasRoute<WishCouponRoute>() == true
+        )
+    val openCouponApproval = { couponId: Long ->
+        navigation.navigate(CouponApprovalRoute(couponId)) { launchSingleTop = true }
+    }
+    // 홈·스탬프 화면이 보이는 동안만 받은 소원권 요청과 승인 대기 상태를 폴링한다.
+    LifecycleStartEffect(isRewardVisible) {
+        wishCouponViewModel.onAction(WishCouponAction.Observe(isRewardVisible))
+        onStopOrDispose { wishCouponViewModel.onAction(WishCouponAction.Observe(false)) }
     }
     LaunchedEffect(navigation, gameSetupViewModel, context) {
         gameSetupViewModel.event.collect { event ->
@@ -185,12 +210,30 @@ internal fun HilkkeumNavHost(
             TemporaryHomeScreen(
                 onStartMission = { navigation.navigate(QuestModeRoute) { launchSingleTop = true } },
                 onStamp = { navigation.navigate(WishCouponRoute) { launchSingleTop = true } },
+                onHowTo = { navigation.navigate(HowToRoute) { launchSingleTop = true } },
+                hasIncomingCouponRequest = wishCoupon.hasIncomingRequest,
+                onOpenCouponRequest = {
+                    wishCoupon.incomingRequest?.let { openCouponApproval(it.couponId.value) }
+                },
             )
+        }
+        composable<HowToRoute> {
+            HowToScreen(onBack = { navigation.popBackStack() })
         }
         composable<WishCouponRoute> {
             WishCouponScreen(
                 viewModel = wishCouponViewModel,
                 onHome = { navigation.popBackStack() },
+                onOpenCouponRequest = openCouponApproval,
+            )
+        }
+        composable<CouponApprovalRoute> { entry ->
+            val route = entry.toRoute<CouponApprovalRoute>()
+            CouponApprovalScreen(
+                couponId = route.couponId,
+                viewModel = couponApprovalViewModel,
+                onResponded = { wishCouponViewModel.onAction(WishCouponAction.Refresh) },
+                onClose = { navigation.popBackStack() },
             )
         }
         composable<EntranceRoute> {

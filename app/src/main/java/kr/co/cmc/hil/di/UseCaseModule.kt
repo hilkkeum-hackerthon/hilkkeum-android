@@ -9,10 +9,9 @@ import kr.co.cmc.hil.domain.repository.GameRepository
 import kr.co.cmc.hil.domain.repository.MissionRepository
 import kr.co.cmc.hil.domain.repository.RoomRepository
 import kr.co.cmc.hil.domain.repository.StampRepository
-import kr.co.cmc.hil.domain.repository.WishStampRepository
-import kr.co.cmc.hil.domain.usecase.GetWishStampProgressUseCase
 import kr.co.cmc.hil.domain.usecase.coupon.ExchangeCouponUseCase
 import kr.co.cmc.hil.domain.usecase.coupon.GetCouponUseCase
+import kr.co.cmc.hil.domain.usecase.coupon.GetIncomingCouponRequestUseCase
 import kr.co.cmc.hil.domain.usecase.coupon.RequestCouponUseUseCase
 import kr.co.cmc.hil.domain.usecase.coupon.RespondCouponUseUseCase
 import kr.co.cmc.hil.domain.usecase.game.CreateGameUseCase
@@ -49,10 +48,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 internal object UseCaseModule {
-    @Provides
-    fun provideGetWishStampProgressUseCase(repository: WishStampRepository): GetWishStampProgressUseCase =
-        GetWishStampProgressUseCase(repository)
-
     @Provides
     @Singleton
     fun provideCreateRoomUseCase(repository: RoomRepository): CreateRoomUseCase =
@@ -157,4 +152,9 @@ internal object UseCaseModule {
     @Singleton
     fun provideRespondCouponUseUseCase(repository: CouponRepository): RespondCouponUseUseCase =
         RespondCouponUseUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetIncomingCouponRequestUseCase(repository: CouponRepository): GetIncomingCouponRequestUseCase =
+        GetIncomingCouponRequestUseCase(repository)
 }

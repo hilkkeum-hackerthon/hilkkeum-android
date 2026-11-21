@@ -425,41 +425,41 @@ description: "Task list for 힐끔 MVP Android client"
 
 > US3–US5와 일부 병렬로 진행할 수 있다. 앱콩은 US5 계약을 마친 뒤 곧바로 T102·T103·T109·T103을 머지한다. 엠키는 Spring 소원권 API, 뭉뭉은 스탬프·소원권 화면을 맡는다.
 
-- [ ] T102 [P] [US6] 모델을 만든다.
+- [X] T102 [P] [US6] 모델을 만든다. ✅ 구현: 기존 `domain/model/stamp/Stamps.kt`(isFull·showFullWarning 추가), `coupon/CouponStatus.kt`·`Coupon.kt`, 신규 `IncomingCouponRequest.kt`
   - `main/domain/model/StampStatus.kt`: heartCount, maxHearts, canExchange, hasActiveCoupon, 파생 속성 showFullWarning
   - `main/domain/model/CouponStatus.kt`: `AVAILABLE` / `PENDING` / `USED`
   - `main/domain/model/WishCoupon.kt`, `main/domain/model/IncomingCouponRequest.kt`
-- [ ] T103 [P] [US6] `main/domain/repository/StampRepository.kt`(`observeStampStatus()`)와 `main/domain/repository/CouponRepository.kt`를 만든다.
+- [X] T103 [P] [US6] `main/domain/repository/StampRepository.kt`(`observeStampStatus()`)와 `main/domain/repository/CouponRepository.kt`를 만든다. ✅ 구현: 기존 `StampRepository`/`CouponRepository`(suspend 조회 방식 유지)에 `getIncomingCouponRequest()`(⚠️G8) 추가. 폴링은 ViewModel에서 수행
   - `CouponRepository`: `observeMyCoupon()`, `exchange()`, `requestUse(id)`, `observeIncomingRequest()`(⚠️G8), `respond(id, approved)`
-- [ ] T104 [P] [US6] DTO를 만든다.
+- [X] T104 [P] [US6] DTO를 만든다. ✅ 구현: 기존 `data/dto/coupon/*`, `dto/stamp/*` 재사용 + `IncomingCouponResponseDto.kt` 추가
   - `main/data/dto/reward/StampStatusResponseDto.kt`, `CouponExchangeResponseDto.kt`, `CouponResponseDto.kt`
   - `main/data/dto/reward/CouponUseRequestResponseDto.kt`, `CouponRespondRequestDto.kt`, `CouponRespondResponseDto.kt`
   - `main/data/dto/reward/IncomingCouponResponseDto.kt` (⚠️G8 제안 형식)
-- [ ] T105 [US6] `main/data/api/SpringApiService.kt`에 API 19, 21–24와 ⚠️G8 제안 엔드포인트 `GET /api/v1/coupons/incoming`을 추가한다.
-- [ ] T106 [P] [US6] `main/data/mapper/RewardMapper.kt`를 만든다. 시각은 `OffsetDateTime`으로 파싱하고, `remainingDays`는 서버 값을 그대로 쓴다.
-- [ ] T107 [US6] `main/data/repositoryimpl/StampRepositoryImpl.kt`와 `main/data/repositoryimpl/CouponRepositoryImpl.kt`를 만든다.
+- [X] T105 [US6] `main/data/api/SpringApiService.kt`에 API 19, 21–24와 ⚠️G8 제안 엔드포인트 `GET /api/v1/coupons/incoming`을 추가한다. ✅ 구현: Retrofit 서비스 대신 Ktor로 `CouponRepositoryImpl`에서 직접 호출. G8 `GET api/v1/coupons/incoming` 추가(404면 요청 없음으로 처리)
+- [X] T106 [P] [US6] `main/data/mapper/RewardMapper.kt`를 만든다. 시각은 `OffsetDateTime`으로 파싱하고, `remainingDays`는 서버 값을 그대로 쓴다. ✅ 구현: 기존 `CouponMapper.kt`/`StampMapper.kt`에 G8 매퍼 추가
+- [X] T107 [US6] `main/data/repositoryimpl/StampRepositoryImpl.kt`와 `main/data/repositoryimpl/CouponRepositoryImpl.kt`를 만든다. ✅ 구현: Repository 구현 완료. 3초(승인 대기)/5초(받은 요청) 폴링과 409 사유 문구 매핑은 `WishCouponViewModel`이 담당. DI는 `di/RepositoryModule.kt`
   - 승인 대기 중에는 `observeMyCoupon`을 3초 폴링하고, `observeIncomingRequest`는 5초 폴링한다
   - 409 사유를 `COUPON_HELD`, `COUPON_PENDING`으로 바꾼다
   - `remote/di/RemoteRepositoryModule.kt`에 바인딩을 추가한다
-- [ ] T108 [P] [US6] `fake/data/fake/FakeStampRepository.kt`와 `fake/data/fake/FakeCouponRepository.kt`를 만든다.
+- [ ] T108 [P] [US6] `fake/data/fake/FakeStampRepository.kt`와 `fake/data/fake/FakeCouponRepository.kt`를 만든다. ⏸️ 보류: 프로젝트에 `fake` 빌드 변형이 없어 미구현. 단위 테스트의 Fake Repository로 대체 검증
   - `FakeServer`에서 승리하면 스탬프가 쌓이게 연동
   - 파트너의 승인·거절과 파트너 쪽 사용 요청을 트리거할 수 있게 한다
   - `fake/di/FakeRepositoryModule.kt`에 바인딩을 추가한다
-- [ ] T109 [P] [US6] 유스케이스를 `main/domain/usecase/reward/` 아래에 만든다: `ObserveStampStatusUseCase.kt`, `ObserveCouponUseCase.kt`, `ExchangeCouponUseCase.kt`, `RequestCouponUseUseCase.kt`, `ObserveIncomingCouponRequestUseCase.kt`, `RespondCouponUseCase.kt`.
-- [ ] T110 [US6] `main/presentation/stamp/`에 Stamp 화면 5개 파일을 만든다. 대기실의 스탬프 탭에 들어가는 내용이다(FR-043~047).
+- [X] T109 [P] [US6] 유스케이스를 `main/domain/usecase/reward/` 아래에 만든다: `ObserveStampStatusUseCase.kt`, `ObserveCouponUseCase.kt`, `ExchangeCouponUseCase.kt`, `RequestCouponUseUseCase.kt`, `ObserveIncomingCouponRequestUseCase.kt`, `RespondCouponUseCase.kt`. ✅ 구현: `domain/usecase/coupon/`의 기존 유스케이스 + `GetIncomingCouponRequestUseCase.kt` (`di/UseCaseModule.kt`)
+- [X] T110 [US6] `main/presentation/stamp/`에 Stamp 화면 5개 파일을 만든다. 대기실의 스탬프 탭에 들어가는 내용이다(FR-043~047). ✅ 구현: `presentation/stamp/WishCoupon{Screen,ViewModel,Action,Event,UiState}.kt` — 기존 UI를 실제 API에 연결, 샘플 데이터 제거
   - 스탬프 n/3, 교환 버튼(canExchange일 때 활성)
   - 소원권과 D-day, 사용 버튼(`AVAILABLE`일 때 활성), `PENDING`이면 '승인 대기'
   - 스탬프가 가득 찬 경우의 경고 문구
-- [ ] T111 [US6] `main/presentation/coupon/use/`에 CouponUse 화면 5개 파일을 만든다(FR-048). 사용 확인 → 요청 → 처리 중·완료(승인 대기)·실패와 재시도 상태를 보여준다.
-- [ ] T112 [US6] `main/presentation/coupon/approval/`에 CouponApproval 화면 5개 파일을 만든다(FR-048a). 받은 요청에 승인/거절으로 응답하고 결과를 안내한다.
-- [ ] T113 [US6] `main/presentation/lobby/LobbyScreen.kt`와 `LobbyViewModel.kt`를 고친다.
+- [X] T111 [US6] `main/presentation/coupon/use/`에 CouponUse 화면 5개 파일을 만든다(FR-048). 사용 확인 → 요청 → 처리 중·완료(승인 대기)·실패와 재시도 상태를 보여준다. ✅ 구현: 별도 화면 대신 `presentation/stamp/WishTicketDialog.kt`가 사용 확인→요청 중→승인 대기/실패·다시 시도를 표시
+- [X] T112 [US6] `main/presentation/coupon/approval/`에 CouponApproval 화면 5개 파일을 만든다(FR-048a). 받은 요청에 승인/거절으로 응답하고 결과를 안내한다. ✅ 구현: `presentation/coupon/approval/CouponApproval*` 5개 파일
+- [X] T113 [US6] `main/presentation/lobby/LobbyScreen.kt`와 `LobbyViewModel.kt`를 고친다. ✅ 구현: 대기실 = `TemporaryHomeScreen`: 받은 요청 배너(`presentation/common/CouponRequestBanner.kt`), `HilkkeumNavHost`에 `CouponApprovalRoute` 연결, 홈·스탬프 화면 표시 중에만 폴링
   - 스탬프 탭에 Stamp 화면 내용을 연결
   - 받은 소원권 요청이 있으면 배너를 표시하고, 누르면 `CouponApprovalRoute`로 이동
   - `main/presentation/navigation/HilNavHost.kt`에 Coupon 라우트 2개를 연결
-- [ ] T114 [US6] `main/presentation/round/settlement/SettlementViewModel.kt`를 고친다. 결산을 확인한 뒤 `ObserveStampStatusUseCase`를 다시 조회해 n/3을 반영한다.
-- [ ] T115 [P] [US6] `res/values/strings.xml`에 US6 문구를 추가한다: 스탬프 n/3, 교환, 소원권, D-%d, 사용, 승인 대기, 승인/거절, 가득 참 경고, 사용 완료, 거절됨.
-- [ ] T116 [P] [US6] `test/domain/model/StampStatusTest.kt`: `showFullWarning` 진리표와 `canExchange` 표시 조건을 확인한다.
-- [ ] T117 [P] [US6] `test/data/repositoryimpl/CouponRepositoryImplTest.kt`: MockWebServer에 `docs/API명세서.md` 21–24번 응답 예시를 넣고 확인한다.
+- [X] T114 [US6] `main/presentation/round/settlement/SettlementViewModel.kt`를 고친다. 결산을 확인한 뒤 `ObserveStampStatusUseCase`를 다시 조회해 n/3을 반영한다. ✅ 구현: 결산 화면(`OperationResultScreen`) 종료 시 스탬프 화면으로 이동하며 `Refresh`로 n/3 재조회
+- [X] T115 [P] [US6] `res/values/strings.xml`에 US6 문구를 추가한다: 스탬프 n/3, 교환, 소원권, D-%d, 사용, 승인 대기, 승인/거절, 가득 참 경고, 사용 완료, 거절됨. ✅ 구현: `res/values/wish_coupon.xml`, `res/values/coupon_approval.xml`
+- [X] T116 [P] [US6] `test/domain/model/StampStatusTest.kt`: `showFullWarning` 진리표와 `canExchange` 표시 조건을 확인한다. ✅ 구현: `test/.../domain/model/stamp/StampsTest.kt`
+- [X] T117 [P] [US6] `test/data/repositoryimpl/CouponRepositoryImplTest.kt`: MockWebServer에 `docs/API명세서.md` 21–24번 응답 예시를 넣고 확인한다. ✅ 구현: `test/.../data/repositoryimpl/CouponRepositoryImplTest.kt` (Ktor MockEngine). ViewModel 테스트 2종도 추가
   - 상태 전이 `AVAILABLE` → `PENDING` → `USED`, 거절 시 `AVAILABLE`
   - 409 사유 매핑
   - `coupon: null`인 응답
@@ -484,9 +484,9 @@ description: "Task list for 힐끔 MVP Android client"
 
 > 화면 전용 단계라 뭉뭉만 작업한다. US6 화면 사이사이에 진행한다.
 
-- [ ] T118 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙.
-- [ ] T119 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다.
-- [ ] T120 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다.
+- [X] T118 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙. ✅ 구현: `res/values/howto.xml` (미션·관찰·추리·채점과 점수 15/10점·벌칙·스탬프와 소원권)
+- [X] T119 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다. ✅ 구현: `presentation/howto/HowToScreen.kt` (Screen + private Content, ViewModel 생략, 뒤로 가기 버튼)
+- [X] T120 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다. ✅ 구현: `HilkkeumNavHost`에 `HowToRoute` 연결. 대기실(`TemporaryHomeScreen`)의 ? 아이콘이 기존 인라인 도움말 대신 이용 방법 화면으로 이동
 
 ---
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="howto_title">이용 방법</string>
+    <string name="howto_back">뒤로 가기</string>
+    <string name="howto_intro">힐끔은 함께 보내는 시간 동안 각자 비밀 미션을 수행하고, 상대의 미션을 맞히는 게임이에요.</string>
+    <string name="howto_mission_title">미션</string>
+    <string name="howto_mission_body">방장이 온라인·오프라인 유형과 미션 개수(1~3개)를 정하면, 각자 미션을 골라요. 내가 고른 미션은 결산 전까지 상대에게 보이지 않아요.</string>
+    <string name="howto_observe_title">관찰</string>
+    <string name="howto_observe_body">데이트하는 동안 들키지 않게 내 미션을 수행하고, 상대의 행동을 힐끔 관찰해요. 한 사람이 종료를 요청하고 상대가 동의하면 추리로 넘어가요.</string>
+    <string name="howto_guess_title">추리</string>
+    <string name="howto_guess_body">상대의 미션 개수만큼 추리를 적어 한 번에 제출해요. 제출한 추리는 고칠 수 없어요.</string>
+    <string name="howto_score_title">채점과 점수</string>
+    <string name="howto_score_body">내 미션을 수행했는지, 상대의 추리가 맞았는지 O/X로 채점해요. 수행한 미션 1개당 15점, 맞힌 추리 1개당 10점이에요. 동점이면 가위바위보로 승자를 정해요.</string>
+    <string name="howto_penalty_title">벌칙</string>
+    <string name="howto_penalty_body">각자 상대가 질 때 받을 벌칙을 1개 골라요. 결산에서는 승자가 고른 벌칙만 공개되고, 패자가 그 벌칙을 수행해요.</string>
+    <string name="howto_stamp_title">스탬프와 소원권</string>
+    <string name="howto_stamp_body">이기면 스탬프 1개를 받아요(최대 3개). 3개를 모으면 소원권 1장으로 바꿀 수 있고, 소원권은 1개월 동안 쓸 수 있어요. 소원권을 쓰려면 파트너의 승인이 필요해요.</string>
+</resources>

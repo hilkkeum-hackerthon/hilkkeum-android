@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coupon_approval_title">소원권 사용 요청</string>
+    <string name="coupon_approval_body">파트너가 소원권을 사용하려고 해요.\n소원을 들어줄까요?</string>
+    <string name="coupon_approval_approve">승인</string>
+    <string name="coupon_approval_reject">거절</string>
+    <string name="coupon_approval_approved">소원권이 사용됐어요.\n파트너의 소원을 들어주세요!</string>
+    <string name="coupon_approval_rejected">요청을 거절했어요.\n소원권은 파트너에게 그대로 남아요.</string>
+    <string name="coupon_approval_confirm">확인</string>
+    <string name="coupon_approval_back">뒤로 가기</string>
+    <string name="coupon_approval_failed">응답을 보내지 못했어요. 다시 시도해 주세요.</string>
+    <string name="coupon_approval_conflict">이미 처리됐거나 응답할 수 없는 요청이에요.</string>
+</resources>
