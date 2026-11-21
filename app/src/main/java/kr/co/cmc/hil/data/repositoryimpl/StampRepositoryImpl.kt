@@ -10,7 +10,6 @@ import kr.co.cmc.hil.data.mapper.toDomain
 import kr.co.cmc.hil.data.safeApiCall
 import kr.co.cmc.hil.domain.common.AppError
 import kr.co.cmc.hil.domain.common.AppResult
-import kr.co.cmc.hil.domain.common.map
 import kr.co.cmc.hil.domain.model.stamp.Stamps
 import kr.co.cmc.hil.domain.repository.StampRepository
 import javax.inject.Inject
@@ -25,9 +24,16 @@ class StampRepositoryImpl @Inject constructor(
      */
     override suspend fun getStamps(): AppResult<Stamps, AppError.Network> {
         return tokenStorage.withMemberToken { token ->
-            safeApiCall<StampsResponseDto> {
+            when (val result = safeApiCall<StampsResponseDto> {
                 httpClient.get("api/v1/stamps") { bearerAuth(token) }
-            }.map { it.toDomain() }
+            }) {
+                is AppResult.Success -> {
+                    val stamps = result.data.toDomain()
+                    if (stamps != null) AppResult.Success(stamps)
+                    else AppResult.Error(AppError.Network.SERIALIZATION)
+                }
+                is AppResult.Error -> result
+            }
         }
     }
 }

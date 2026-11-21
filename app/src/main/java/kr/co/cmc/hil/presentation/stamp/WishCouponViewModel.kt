@@ -199,16 +199,22 @@ internal class WishCouponViewModel @Inject constructor(
 
         when (result) {
             is AppResult.Success -> {
+                val waitingForPartner = result.data.waitingForPartner
                 updateState {
                     it.copy(
                         isRequestingUse = false,
                         hasUseRequestError = false,
-                        coupon = coupon.copy(status = CouponStatus.PENDING),
+                        coupon = if (waitingForPartner) coupon.copy(status = CouponStatus.PENDING) else null,
                     )
                 }
                 emitEvent(WishCouponEvent.UseRequested)
-                emitEvent(WishCouponEvent.ShowMessage(R.string.wish_coupon_use_requested))
-                startPendingPollingIfNeeded()
+                if (waitingForPartner) {
+                    emitEvent(WishCouponEvent.ShowMessage(R.string.wish_coupon_use_requested))
+                    startPendingPollingIfNeeded()
+                } else {
+                    emitEvent(WishCouponEvent.ShowMessage(R.string.wish_ticket_used))
+                    loadStatus()
+                }
             }
             is AppResult.Error -> {
                 val message = if (result.error == AppError.Network.CONFLICT) {

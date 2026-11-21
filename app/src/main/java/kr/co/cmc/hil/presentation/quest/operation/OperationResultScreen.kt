@@ -38,13 +38,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kr.co.cmc.hil.R
+import kr.co.cmc.hil.domain.model.game.GameOutcome
+import kr.co.cmc.hil.domain.model.game.GameResult
 import kr.co.cmc.hil.presentation.quest.questTextStyle
 
 private const val SamplePlayerScore = 1
 private const val SampleGradingDelayMillis = 1_500L
 
 @Composable
-internal fun OperationResultScreen(partnerCorrectCount: Int, onFinish: () -> Unit) {
+internal fun OperationResultScreen(partnerCorrectCount: Int, result: GameResult? = null, onFinish: () -> Unit) {
     var isEnvelopeOpened by rememberSaveable { mutableStateOf(false) }
     var isSampleGradingComplete by rememberSaveable { mutableStateOf(false) }
 
@@ -63,7 +65,7 @@ internal fun OperationResultScreen(partnerCorrectCount: Int, onFinish: () -> Uni
         val scale = minOf(maxWidth.coerceAtMost(480.dp) / 360.dp, maxHeight / 740.dp)
         Box(Modifier.size(360.dp * scale, 740.dp * scale)) {
             if (isSampleGradingComplete) {
-                RevealedResult(scale, partnerCorrectCount, onFinish)
+                RevealedResult(scale, partnerCorrectCount, result, onFinish)
             } else {
                 ResultArtwork(R.drawable.result_envelope_art)
                 ResultLabel(
@@ -97,8 +99,17 @@ internal fun OperationResultScreen(partnerCorrectCount: Int, onFinish: () -> Uni
 }
 
 @Composable
-private fun BoxScope.RevealedResult(scale: Float, partnerCorrectCount: Int, onFinish: () -> Unit) {
-    val outcome = SamplePlayerScore.compareTo(partnerCorrectCount)
+private fun BoxScope.RevealedResult(
+    scale: Float,
+    partnerCorrectCount: Int,
+    result: GameResult?,
+    onFinish: () -> Unit,
+) {
+    val outcome = when (result?.myResult) {
+        GameOutcome.WIN -> 1
+        GameOutcome.LOSE -> -1
+        null -> SamplePlayerScore.compareTo(partnerCorrectCount)
+    }
     ResultArtwork(R.drawable.result_open_art)
     ResultLabel(stringResource(R.string.operation_result_intro), scale, 112f)
     ResultLabel(
@@ -118,7 +129,7 @@ private fun BoxScope.RevealedResult(scale: Float, partnerCorrectCount: Int, onFi
     ResultLabel(
         text = stringResource(
             when {
-                outcome > 0 -> R.string.operation_result_sample_stamp
+                outcome > 0 -> if (result == null) R.string.operation_result_sample_stamp else R.string.operation_result_stamp_check
                 outcome < 0 -> R.string.operation_result_penalty_hint
                 else -> R.string.operation_result_tie_hint
             },
@@ -129,22 +140,24 @@ private fun BoxScope.RevealedResult(scale: Float, partnerCorrectCount: Int, onFi
     when {
         outcome > 0 -> {
             ResultArtwork(R.drawable.result_stamp_art)
-            ResultLabel(
-                stringResource(R.string.operation_result_stamp_number), scale, 353f,
-                fontSize = 32f, weight = FontWeight.SemiBold, modifier = Modifier.rotate(15f),
-            )
-            ResultLabel(
-                text = stringResource(R.string.operation_result_stamp_date),
-                scale = scale,
-                top = 413f,
-                fontSize = 14f,
-                weight = FontWeight.Normal,
-                modifier = Modifier.offset(x = (-9).dp * scale).rotate(15f),
-            )
+            if (result == null) {
+                ResultLabel(
+                    stringResource(R.string.operation_result_stamp_number), scale, 353f,
+                    fontSize = 32f, weight = FontWeight.SemiBold, modifier = Modifier.rotate(15f),
+                )
+                ResultLabel(
+                    text = stringResource(R.string.operation_result_stamp_date),
+                    scale = scale,
+                    top = 413f,
+                    fontSize = 14f,
+                    weight = FontWeight.Normal,
+                    modifier = Modifier.offset(x = (-9).dp * scale).rotate(15f),
+                )
+            }
         }
         outcome < 0 -> {
             ResultArtwork(R.drawable.result_penalty_art)
-            ResultLabel(stringResource(R.string.operation_result_sample_penalty), scale, 371f, fontSize = 22f)
+            ResultLabel(result?.penalty?.content ?: if (result == null) stringResource(R.string.operation_result_sample_penalty) else "", scale, 371f, fontSize = 22f)
         }
     }
 

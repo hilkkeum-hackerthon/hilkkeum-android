@@ -38,8 +38,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -70,25 +68,42 @@ private val PenaltyCards = listOf(
 )
 
 @Composable
-fun QuestPenaltyScreen(onNext: (Int) -> Unit) {
-    var selectedId by rememberSaveable { mutableStateOf<Int?>(null) }
+internal fun QuestPenaltyScreen(
+    labels: List<String>,
+    isSubmitting: Boolean,
+    catalogStatus: (@Composable () -> Unit)? = null,
+    onNext: (Int) -> Unit,
+) {
+    var selectedIndex by rememberSaveable(labels) { mutableStateOf<Int?>(null) }
+    var page by rememberSaveable(labels) { mutableStateOf(0) }
 
     QuestPenaltyContent(
-        selectedId = selectedId,
-        onSelect = { id -> selectedId = id.takeUnless { it == selectedId } },
-        onNext = { selectedId?.let(onNext) },
+        labels = labels,
+        selectedIndex = selectedIndex,
+        page = page,
+        isSubmitting = isSubmitting,
+        catalogStatus = catalogStatus,
+        onPageChange = { page = it },
+        onSelect = { index -> selectedIndex = index.takeUnless { it == selectedIndex } },
+        onNext = { selectedIndex?.let(onNext) },
     )
 }
 
 @Composable
 private fun QuestPenaltyContent(
-    selectedId: Int?,
+    labels: List<String>,
+    selectedIndex: Int?,
+    page: Int,
+    isSubmitting: Boolean,
+    catalogStatus: (@Composable () -> Unit)?,
+    onPageChange: (Int) -> Unit,
     onSelect: (Int) -> Unit,
     onNext: () -> Unit,
 ) {
     val background = colorResource(R.color.entrance_background)
-    val selected = PenaltyCards.firstOrNull { it.id == selectedId }
-    val hasSelection = selected != null
+    val pageStart = page * PenaltyCards.size
+    val pageCount = (labels.size + PenaltyCards.size - 1) / PenaltyCards.size
+    val selected = selectedIndex?.let { PenaltyCards.getOrNull(it - pageStart) }
 
     Box(
         modifier = Modifier.fillMaxSize().background(background),
@@ -118,13 +133,18 @@ private fun QuestPenaltyContent(
                 Box(Modifier.matchParentSize().selectableGroup()) {
                     PenaltyArtwork(R.drawable.quest_penalty_path_selected, 96.33f, 211.51f, 168.26f, 283.95f, scale)
 
-                    PenaltyCards.forEach { card ->
-                        PenaltyOption(
-                            card = card,
-                            isSelected = card.id == selectedId,
-                            scale = scale,
-                            onClick = { onSelect(card.id) },
-                        )
+                    PenaltyCards.forEachIndexed { slot, card ->
+                        val index = pageStart + slot
+                        val label = labels.getOrNull(index)
+                        if (label != null) {
+                            PenaltyOption(
+                                card = card,
+                                label = label,
+                                isSelected = index == selectedIndex,
+                                scale = scale,
+                                onClick = { onSelect(index) },
+                            )
+                        }
                     }
                     if (selected != null) {
                         PenaltyArtwork(
@@ -135,9 +155,28 @@ private fun QuestPenaltyContent(
                         )
                     }
                 }
+                if (catalogStatus != null) {
+                    Box(Modifier.align(Alignment.Center)) { catalogStatus() }
+                }
+                if (pageCount > 1) {
+                    androidx.compose.foundation.layout.Row(
+                        Modifier.align(Alignment.TopCenter).offset(y = 577.dp * scale),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.TextButton(
+                            onClick = { onPageChange(page - 1) },
+                            enabled = page > 0,
+                        ) { Text(stringResource(R.string.penalty_previous_page)) }
+                        Text("${page + 1} / $pageCount", color = colorResource(R.color.quest_mode_title))
+                        androidx.compose.material3.TextButton(
+                            onClick = { onPageChange(page + 1) },
+                            enabled = page + 1 < pageCount,
+                        ) { Text(stringResource(R.string.penalty_next_page)) }
+                    }
+                }
                 Button(
                     onClick = onNext,
-                    enabled = hasSelection,
+                    enabled = selectedIndex != null && !isSubmitting && catalogStatus == null,
                     modifier = Modifier.align(Alignment.BottomCenter)
                         .offset(x = 4.dp * scale).padding(bottom = 78.dp * scale)
                         .width(328.dp * scale).heightIn(min = maxOf(48.dp, 52.dp * scale)),
@@ -157,11 +196,11 @@ private fun QuestPenaltyContent(
 @Composable
 private fun BoxScope.PenaltyOption(
     card: PenaltyCard,
+    label: String,
     isSelected: Boolean,
     scale: Float,
     onClick: () -> Unit,
 ) {
-    val description = stringResource(R.string.quest_penalty_option, card.id)
     Column(
         modifier = Modifier.align(Alignment.TopStart)
             .offset((card.centerX - 70f).dp * scale, (card.centerY - 40f).dp * scale)
@@ -170,14 +209,13 @@ private fun BoxScope.PenaltyOption(
             .clip(RoundedCornerShape(8.dp * scale))
             .background(colorResource(card.color))
             .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
-            .semantics { contentDescription = description }
             .padding(start = 10.dp * scale, end = 10.dp * scale, top = 4.dp * scale, bottom = 10.dp * scale),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp * scale, Alignment.CenterVertically),
     ) {
         Image(painterResource(card.pin), contentDescription = null, modifier = Modifier.size(8.dp * scale))
         Text(
-            text = stringResource(R.string.quest_penalty_sample),
+            text = label,
             color = colorResource(R.color.quest_mode_card_text),
             style = questTextStyle(16f * scale, FontWeight.Medium),
             textAlign = TextAlign.Center,
@@ -205,5 +243,16 @@ private fun PenaltyArtwork(
 @Preview(widthDp = 360, heightDp = 740)
 @Composable
 private fun QuestPenaltyPreview() {
-    HilkkeumTheme { QuestPenaltyContent(selectedId = 3, onSelect = {}, onNext = {}) }
+    HilkkeumTheme {
+        QuestPenaltyContent(
+            labels = List(PenaltyCards.size) { stringResource(R.string.quest_penalty_sample) },
+            selectedIndex = 2,
+            page = 0,
+            isSubmitting = false,
+            catalogStatus = null,
+            onPageChange = {},
+            onSelect = {},
+            onNext = {},
+        )
+    }
 }

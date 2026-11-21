@@ -43,15 +43,23 @@ import androidx.compose.ui.unit.dp
 import kr.co.cmc.hil.R
 import kr.co.cmc.hil.ui.theme.HilkkeumTheme
 
-private val SampleQuestIds = 1..7
 
 @Composable
-fun QuestSelectionScreen(missionCount: Int, onNext: (List<Int>) -> Unit) {
-    var selected by rememberSaveable(missionCount) { mutableStateOf(arrayListOf<Int>()) }
+fun QuestSelectionScreen(
+    missionCount: Int,
+    labels: List<String>,
+    isSubmitting: Boolean,
+    catalogStatus: (@Composable () -> Unit)? = null,
+    onNext: (List<Int>) -> Unit,
+) {
+    var selected by rememberSaveable(missionCount, labels) { mutableStateOf(arrayListOf<Int>()) }
 
     QuestSelectionContent(
         missionCount = missionCount,
         selected = selected,
+        labels = labels,
+        isSubmitting = isSubmitting,
+        catalogStatus = catalogStatus,
         onToggle = { id ->
             if (id in selected) {
                 selected = ArrayList(selected - id)
@@ -67,6 +75,9 @@ fun QuestSelectionScreen(missionCount: Int, onNext: (List<Int>) -> Unit) {
 private fun QuestSelectionContent(
     missionCount: Int,
     selected: List<Int>,
+    labels: List<String>,
+    isSubmitting: Boolean = false,
+    catalogStatus: (@Composable () -> Unit)? = null,
     onToggle: (Int) -> Unit,
     onNext: () -> Unit,
 ) {
@@ -110,9 +121,9 @@ private fun QuestSelectionContent(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp * scale),
                     verticalArrangement = Arrangement.spacedBy(8.dp * scale),
                 ) {
-                    SampleQuestIds.forEach { id ->
+                    labels.forEachIndexed { id, label ->
                         QuestSelectionRow(
-                            label = stringResource(R.string.quest_selection_sample, id),
+                            label = label,
                             isSelected = id in selected,
                             canToggle = id in selected || selected.size < missionCount,
                             scale = scale,
@@ -120,10 +131,11 @@ private fun QuestSelectionContent(
                         )
                     }
                 }
+                catalogStatus?.invoke()
                 Spacer(Modifier.heightIn(min = 48.dp * scale).weight(1f))
                 Button(
                     onClick = onNext,
-                    enabled = selected.size == missionCount,
+                    enabled = selected.size == missionCount && !isSubmitting && catalogStatus == null,
                     modifier = Modifier.offset(x = 4.dp * scale)
                         .width(328.dp * scale)
                         .heightIn(min = maxOf(48.dp, 52.dp * scale)),
@@ -173,6 +185,6 @@ private fun QuestSelectionRow(
 @Composable
 private fun QuestSelectionPreview() {
     HilkkeumTheme {
-        QuestSelectionContent(3, listOf(2, 4), onToggle = {}, onNext = {})
+        QuestSelectionContent(3, listOf(2, 4), List(7) { stringResource(R.string.quest_selection_sample, it + 1) }, onToggle = {}, onNext = {})
     }
 }

@@ -54,11 +54,7 @@ import kr.co.cmc.hil.presentation.quest.questTextStyle
 private const val SampleDurationMillis = (12 * 3600L + 32 * 60 + 12) * 1_000
 
 @Composable
-internal fun OperationProgressScreen(missionIds: List<Int>, penaltyId: Int, onEnd: () -> Unit) {
-    val missionLabels = stringArrayResource(R.array.operation_sample_missions)
-    val penaltyLabels = stringArrayResource(R.array.operation_sample_penalties)
-    val missions = missionIds.mapNotNull { id -> missionLabels.getOrNull(id - 1) }
-    val penalty = penaltyLabels.getOrNull(penaltyId - 1).orEmpty()
+internal fun OperationProgressScreen(missions: List<String>, penalty: String, onEnd: () -> Unit) {
     val deadline = rememberSaveable { System.currentTimeMillis() + SampleDurationMillis }
     var remaining by rememberSaveable { mutableLongStateOf(SampleDurationMillis / 1_000) }
     var active by rememberSaveable { mutableIntStateOf(0) }

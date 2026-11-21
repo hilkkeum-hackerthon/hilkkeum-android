@@ -18,11 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,55 +46,39 @@ private const val MaxGuessCharacters = 30
 internal fun MissionGuessScreen(
     missionCount: Int,
     submittedAnswers: List<String>?,
+    isSubmitting: Boolean = false,
     onSubmit: (List<String>) -> Unit,
 ) {
     var answers by rememberSaveable(missionCount) {
-        mutableStateOf(ArrayList(submittedAnswers ?: List(missionCount) { "" }))
+        mutableStateOf(ArrayList(List(missionCount) { submittedAnswers?.getOrNull(it).orEmpty() }))
     }
-    var isSubmitted by rememberSaveable { mutableStateOf(submittedAnswers != null) }
-    var showConfirmation by rememberSaveable { mutableStateOf(false) }
+    val isSubmitted = submittedAnswers != null
+    val canSubmit = !isSubmitted && !isSubmitting && answers.isNotEmpty() && answers.all(String::isNotEmpty)
     val focus = LocalFocusManager.current
-    val submit = {
-        if (!isSubmitted) {
-            isSubmitted = true
-            showConfirmation = false
-            answers = ArrayList(answers.map(String::trim))
-            onSubmit(answers.toList())
-        }
-    }
 
     MissionGuessContent(
         answers = answers,
         isSubmitted = isSubmitted,
+        canSubmit = canSubmit,
+        isSubmitting = isSubmitting,
         onAnswerChange = { index, value ->
             answers = ArrayList(answers).apply { set(index, value) }
         },
         onSubmit = {
-            focus.clearFocus()
-            if (answers.any(String::isBlank)) showConfirmation = true else submit()
+            if (canSubmit) {
+                focus.clearFocus()
+                onSubmit(answers.toList())
+            }
         },
     )
-    if (showConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showConfirmation = false },
-            title = { Text(stringResource(R.string.mission_guess_empty_confirmation)) },
-            text = { Text(stringResource(R.string.mission_guess_empty_body)) },
-            confirmButton = {
-                TextButton(onClick = submit) { Text(stringResource(R.string.mission_guess_submit)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmation = false }) {
-                    Text(stringResource(R.string.mission_guess_continue))
-                }
-            },
-        )
-    }
 }
 
 @Composable
 private fun MissionGuessContent(
     answers: List<String>,
     isSubmitted: Boolean,
+    canSubmit: Boolean = !isSubmitted && answers.isNotEmpty() && answers.all(String::isNotEmpty),
+    isSubmitting: Boolean = false,
     onAnswerChange: (Int, String) -> Unit,
     onSubmit: () -> Unit,
 ) {
@@ -138,7 +120,7 @@ private fun MissionGuessContent(
                         MissionGuessField(
                             number = index + 1,
                             value = answer,
-                            readOnly = isSubmitted,
+                            readOnly = isSubmitted || isSubmitting,
                             onChange = { onAnswerChange(index, it) },
                             scale = scale,
                         )
@@ -147,7 +129,7 @@ private fun MissionGuessContent(
                 Spacer(Modifier.heightIn(min = 32.dp * scale).weight(1f))
                 Button(
                     onClick = onSubmit,
-                    enabled = !isSubmitted,
+                    enabled = canSubmit,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp * scale),
                     shape = RoundedCornerShape(8.dp * scale),
                     colors = ButtonDefaults.buttonColors(containerColor = orange, contentColor = background),

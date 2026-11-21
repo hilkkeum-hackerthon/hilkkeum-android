@@ -159,15 +159,15 @@ class CouponRepositoryImplTest {
     }
 
     @Test
-    fun requestUseReturnsWaitingForPartner() = runBlocking {
+    fun useCouponCompletesImmediately() = runBlocking {
         val repository = repository {
-            json("""{"couponId":1,"status":"PENDING","requestedByMemberId":1,"waitingForPartner":true}""")
+            json("""{"couponId":1,"memberId":1,"status":"USED"}""")
         }
 
         val result = repository.requestCouponUse(CouponId(1))
 
-        assertTrue((result as AppResult.Success).data.waitingForPartner)
-        assertEquals("/api/v1/coupons/1/use-request", requests.single().url.encodedPath)
+        assertEquals(false, (result as AppResult.Success).data.waitingForPartner)
+        assertEquals("/api/v1/coupons/1/use", requests.single().url.encodedPath)
     }
 
     @Test
