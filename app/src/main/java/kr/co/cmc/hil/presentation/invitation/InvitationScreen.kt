@@ -68,7 +68,11 @@ private val InvitationFont = FontFamily(
 )
 
 @Composable
-fun InvitationScreen(onBack: () -> Unit, shareCode: String? = null) {
+fun InvitationScreen(
+    onBack: () -> Unit,
+    shareCode: String? = null,
+    onJoin: ((String) -> Boolean)? = null,
+) {
     var enteredCode by rememberSaveable { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     val clipboard = LocalClipboard.current
@@ -77,11 +81,20 @@ fun InvitationScreen(onBack: () -> Unit, shareCode: String? = null) {
     val copyLabel = stringResource(R.string.invitation_copy)
     val emptyMessage = stringResource(R.string.invitation_hint)
     val unavailable = stringResource(R.string.entrance_invite_unavailable)
+    val invalid = stringResource(R.string.invitation_invalid_code)
     val submit: () -> Unit = {
         keyboard?.hide()
-        scope.launch {
-            snackbar.currentSnackbarData?.dismiss()
-            snackbar.showSnackbar(if (enteredCode.isBlank()) emptyMessage else unavailable)
+        val message = when {
+            enteredCode.isBlank() -> emptyMessage
+            onJoin == null -> unavailable
+            onJoin(enteredCode) -> null
+            else -> invalid
+        }
+        if (message != null) {
+            scope.launch {
+                snackbar.currentSnackbarData?.dismiss()
+                snackbar.showSnackbar(message)
+            }
         }
     }
 

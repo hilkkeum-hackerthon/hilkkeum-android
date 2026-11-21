@@ -1,0 +1,12 @@
+<resources>
+    <string name="mission_judge_heading">상대가 내 미션을 제대로\n추리했는지 확인해 주세요</string>
+    <string name="mission_judge_hint">상대방이 추리한 내용이 정답인 경우 체크해주세요</string>
+    <string name="mission_judge_show_mission">내 미션 보기</string>
+    <string name="mission_judge_result">결과 확인하기</string>
+    <string name="mission_judge_saved">채점 결과를 저장했어요. 최종 결과 화면은 준비 중이에요.</string>
+    <string-array name="mission_judge_sample_partner_guesses">
+        <item>먼저 나서서 손잡아 주기</item>
+        <item>상대방에게 칭찬 세 가지 하기</item>
+        <item>오늘의 추억을 사진으로 남기기</item>
+    </string-array>
+</resources>
