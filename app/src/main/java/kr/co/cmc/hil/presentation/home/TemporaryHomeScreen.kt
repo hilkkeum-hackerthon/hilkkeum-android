@@ -42,12 +42,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kr.co.cmc.hil.R
+import kr.co.cmc.hil.presentation.common.CouponRequestBanner
 import kr.co.cmc.hil.presentation.common.HomeStampToggle
 import kr.co.cmc.hil.presentation.common.homeFrameScale
 import kr.co.cmc.hil.presentation.quest.questTextStyle
 
 @Composable
-fun TemporaryHomeScreen(onStartMission: () -> Unit, onStamp: () -> Unit) {
+fun TemporaryHomeScreen(
+    onStartMission: () -> Unit,
+    onStamp: () -> Unit,
+    hasIncomingCouponRequest: Boolean = false,
+    onOpenCouponRequest: () -> Unit = {},
+) {
     var isHelpOpen by rememberSaveable { mutableStateOf(false) }
     val background = colorResource(R.color.entrance_background)
 
@@ -81,7 +87,17 @@ fun TemporaryHomeScreen(onStartMission: () -> Unit, onStamp: () -> Unit) {
                     style = questTextStyle(20f * scale, FontWeight.SemiBold),
                 )
             }
-            if (isHelpOpen) HomeHelp(scale)
+            if (isHelpOpen) {
+                HomeHelp(scale)
+            } else if (hasIncomingCouponRequest) {
+                CouponRequestBanner(
+                    onClick = onOpenCouponRequest,
+                    modifier = Modifier.align(Alignment.TopCenter).offset(y = 76.dp * scale).width(328.dp * scale),
+                    scale = scale,
+                )
+            } else {
+                // 받은 소원권 요청이 없으면 배너를 띄우지 않는다.
+            }
             IconButton(
                 onClick = { isHelpOpen = !isHelpOpen },
                 modifier = Modifier.align(Alignment.TopEnd)
@@ -174,4 +190,10 @@ private fun BoxScope.HomeHelp(scale: Float) {
 @Composable
 private fun TemporaryHomePreview() {
     TemporaryHomeScreen(onStartMission = {}, onStamp = {})
+}
+
+@Preview(widthDp = 360, heightDp = 740, name = "Coupon request")
+@Composable
+private fun TemporaryHomeCouponRequestPreview() {
+    TemporaryHomeScreen(onStartMission = {}, onStamp = {}, hasIncomingCouponRequest = true)
 }

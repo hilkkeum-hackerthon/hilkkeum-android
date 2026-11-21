@@ -8,14 +8,12 @@ import kr.co.cmc.hil.data.repositoryimpl.CouponRepositoryImpl
 import kr.co.cmc.hil.data.repositoryimpl.GameRepositoryImpl
 import kr.co.cmc.hil.data.repositoryimpl.MissionRepositoryImpl
 import kr.co.cmc.hil.data.repositoryimpl.RoomRepositoryImpl
-import kr.co.cmc.hil.data.repositoryimpl.SampleWishStampRepository
 import kr.co.cmc.hil.data.repositoryimpl.StampRepositoryImpl
 import kr.co.cmc.hil.domain.repository.CouponRepository
 import kr.co.cmc.hil.domain.repository.GameRepository
 import kr.co.cmc.hil.domain.repository.MissionRepository
 import kr.co.cmc.hil.domain.repository.RoomRepository
 import kr.co.cmc.hil.domain.repository.StampRepository
-import kr.co.cmc.hil.domain.repository.WishStampRepository
 import javax.inject.Singleton
 
 /**
@@ -54,7 +52,4 @@ internal abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindCouponRepository(impl: CouponRepositoryImpl): CouponRepository
-
-    @Binds
-    abstract fun bindWishStampRepository(implementation: SampleWishStampRepository): WishStampRepository
 }

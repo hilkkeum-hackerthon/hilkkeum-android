@@ -10,17 +10,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,18 +38,41 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kr.co.cmc.hil.R
+import kr.co.cmc.hil.domain.model.coupon.Coupon
 
+private val TicketDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+
+/**
+ * 보유한 소원권을 보여주고 사용 요청을 보내는 다이얼로그. 요청 중이면 버튼에 진행 표시를, 실패하면 다시 시도 문구를 보여준다.
+ */
 @Composable
-internal fun WishTicketDialog(onDismiss: () -> Unit, onUse: () -> Unit) {
+internal fun WishTicketDialog(
+    coupon: Coupon,
+    isSubmitting: Boolean,
+    hasError: Boolean,
+    onDismiss: () -> Unit,
+    onUse: () -> Unit,
+) {
     val orange = colorResource(R.color.entrance_create_background)
     val ink = colorResource(R.color.entrance_background)
     val ticketShape = RoundedCornerShape(14.dp)
-    val issuedDate = rememberSaveable { LocalDate.now().toEpochDay() }
-    val issued = LocalDate.ofEpochDay(issuedDate)
-    val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+    val period = stringResource(
+        R.string.wish_ticket_period,
+        coupon.issuedAt.format(TicketDateFormatter),
+        coupon.expiresAt.format(TicketDateFormatter),
+    )
+    val dDay = if (coupon.remainingDays > 0) {
+        stringResource(R.string.wish_coupon_dday, coupon.remainingDays)
+    } else {
+        stringResource(R.string.wish_coupon_dday_today)
+    }
+    val useLabel = when {
+        isSubmitting -> R.string.wish_ticket_requesting
+        hasError -> R.string.wish_coupon_retry
+        else -> R.string.wish_ticket_use
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
@@ -102,18 +127,26 @@ internal fun WishTicketDialog(onDismiss: () -> Unit, onUse: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    stringResource(R.string.wish_ticket_period, issued.format(formatter), issued.plusMonths(1).format(formatter)),
-                    modifier = Modifier.weight(1f),
-                    color = ink,
-                    style = wishStyle(14f),
-                )
+                Column(Modifier.weight(1f)) {
+                    Text(period, color = ink, style = wishStyle(14f))
+                    Text(dDay, color = Color.White, style = wishStyle(14f, FontWeight.SemiBold))
+                }
                 Button(
                     onClick = onUse,
+                    enabled = !isSubmitting,
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ink,
+                        contentColor = Color.White,
+                        disabledContainerColor = ink,
+                        disabledContentColor = Color.White,
+                    ),
                 ) {
-                    Text(stringResource(R.string.wish_ticket_use), style = wishStyle(17f, FontWeight.Medium))
+                    if (isSubmitting) {
+                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(stringResource(useLabel), style = wishStyle(17f, FontWeight.Medium))
                 }
             }
         }
