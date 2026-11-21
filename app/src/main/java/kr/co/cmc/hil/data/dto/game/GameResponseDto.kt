@@ -13,5 +13,5 @@ data class GameResponseDto(
     val status: String,
     val mySelectionCompleted: Boolean,
     val partnerSelectionCompleted: Boolean,
-    val endRequestPending: Boolean,
+    val endRequestPending: Boolean = false,
 )

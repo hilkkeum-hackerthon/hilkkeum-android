@@ -12,8 +12,8 @@ import kr.co.cmc.hil.domain.model.game.DateType
 import kr.co.cmc.hil.domain.model.game.GameId
 import kr.co.cmc.hil.domain.model.room.RoomSession
 import kr.co.cmc.hil.domain.usecase.game.CreateGameUseCase
+import kr.co.cmc.hil.domain.usecase.game.GetActiveGameIdUseCase
 import kr.co.cmc.hil.domain.usecase.game.GetGameUseCase
-import kr.co.cmc.hil.domain.usecase.room.GetRoomUseCase
 import kr.co.cmc.hil.presentation.common.MviViewModel
 
 internal data class GameSetupUiState(
@@ -39,7 +39,7 @@ private const val PlayingStatus = "PLAYING"
 internal class GameSetupViewModel @Inject constructor(
     private val createGame: CreateGameUseCase,
     private val getGame: GetGameUseCase,
-    private val getRoom: GetRoomUseCase,
+    private val getActiveGameId: GetActiveGameIdUseCase,
 ) : MviViewModel<GameSetupUiState, GameSetupAction, GameSetupEvent>(GameSetupUiState()) {
     private var statusJob: Job? = null
 
@@ -54,18 +54,22 @@ internal class GameSetupViewModel @Inject constructor(
                 is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_create_failed))
             }
         } else {
-            val roomResult = getRoom(room.roomId)
-            val gameId = (roomResult as? AppResult.Success)?.data?.currentGameId
+            val activeGameResult = getActiveGameId(room.roomId)
+            val gameId = when (activeGameResult) {
+                is AppResult.Success -> activeGameResult.data
+                is AppResult.Error -> {
+                    emitEvent(GameSetupEvent.ShowMessage(R.string.game_status_failed))
+                    return
+                }
+            }
             if (gameId == null) {
-                val message = if (roomResult is AppResult.Error) R.string.game_status_failed
-                else R.string.game_wait_for_creator
-                emitEvent(GameSetupEvent.ShowMessage(message))
+                emitEvent(GameSetupEvent.ShowMessage(R.string.game_wait_for_creator))
                 return
             }
-            when (val result = getGame(GameId(gameId))) {
+            when (val result = getGame(gameId)) {
                 is AppResult.Success -> {
                     val game = result.data
-                    emitEvent(GameSetupEvent.OpenSelection(gameId, game.missionCount))
+                    emitEvent(GameSetupEvent.OpenSelection(gameId.value, game.missionCount))
                 }
                 is AppResult.Error -> emitEvent(GameSetupEvent.ShowMessage(R.string.game_status_failed))
             }
