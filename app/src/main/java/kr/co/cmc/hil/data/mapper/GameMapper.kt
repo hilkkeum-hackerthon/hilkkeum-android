@@ -6,6 +6,7 @@ import kr.co.cmc.hil.data.dto.game.DateTypeDto
 import kr.co.cmc.hil.data.dto.game.GameOutcomeDto
 import kr.co.cmc.hil.data.dto.game.GameResponseDto
 import kr.co.cmc.hil.data.dto.game.GameResultResponseDto
+import kr.co.cmc.hil.data.dto.game.GameStatusDto
 import kr.co.cmc.hil.data.dto.game.GuessRequestDto
 import kr.co.cmc.hil.data.dto.game.JudgeGuessResponseDto
 import kr.co.cmc.hil.data.dto.game.PlayerResultDto
@@ -21,6 +22,7 @@ import kr.co.cmc.hil.domain.model.game.Game
 import kr.co.cmc.hil.domain.model.game.GameId
 import kr.co.cmc.hil.domain.model.game.GameOutcome
 import kr.co.cmc.hil.domain.model.game.GameResult
+import kr.co.cmc.hil.domain.model.game.GameStatus
 import kr.co.cmc.hil.domain.model.game.GuessId
 import kr.co.cmc.hil.domain.model.game.GuessJudgment
 import kr.co.cmc.hil.domain.model.game.GuessSubmission
@@ -53,7 +55,7 @@ fun GameResponseDto.toDomain(): Game = Game(
     gameId = GameId(gameId),
     dateType = dateType.toDomain(),
     missionCount = missionCount,
-    status = status,
+    status = status.toDomain(),
     mySelectionCompleted = mySelectionCompleted,
     partnerSelectionCompleted = partnerSelectionCompleted,
     endRequestPending = endRequestPending,
@@ -177,4 +179,14 @@ private fun ResultPenaltyDto.toDomain(): ResultPenalty = ResultPenalty(
 private fun GameOutcomeDto.toDomain(): GameOutcome = when (this) {
     GameOutcomeDto.WIN -> GameOutcome.WIN
     GameOutcomeDto.LOSE -> GameOutcome.LOSE
+}
+
+/**
+ * 서버 응답의 [GameStatusDto]를 도메인 [GameStatus]로 변환한다.
+ */
+private fun GameStatusDto.toDomain(): GameStatus = when (this) {
+    GameStatusDto.SETTING -> GameStatus.SETTING
+    GameStatusDto.PLAYING -> GameStatus.PLAYING
+    GameStatusDto.GUESSING -> GameStatus.GUESSING
+    GameStatusDto.FINISHED -> GameStatus.FINISHED
 }

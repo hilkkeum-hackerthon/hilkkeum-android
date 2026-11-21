@@ -10,8 +10,8 @@ data class GameResponseDto(
     val gameId: Long,
     val dateType: DateTypeDto,
     val missionCount: Int,
-    val status: String,
+    val status: GameStatusDto,
     val mySelectionCompleted: Boolean,
     val partnerSelectionCompleted: Boolean,
-    val endRequestPending: Boolean,
+    val endRequestPending: Boolean = false,
 )
