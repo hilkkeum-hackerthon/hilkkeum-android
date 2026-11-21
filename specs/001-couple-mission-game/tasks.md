@@ -38,11 +38,51 @@ description: "Task list for 힐끔 MVP Android client"
 - 화면 패키지마다 `XxxScreen.kt`(Screen + private Content), `XxxViewModel.kt`(`MviViewModel` 상속), `XxxAction.kt`, `XxxEvent.kt`, `XxxUiState.kt` 5개 파일을 만든다(RULES §8·§9).
 - 모든 UI 문구는 `res/values/strings.xml`에 둔다.
 
+## 역할 분담 (앱 개발자 3명: 뭉뭉 · 엠키 · 앱콩)
+
+| 담당 | 역할 | 주로 맡는 파일 | 작업 수 |
+|------|------|---------------|---------|
+| **뭉뭉** | 데이터·도메인 | Gradle 빌드 파일, `main/data/**`, `main/di/NetworkModule.kt`, `NodeApiService.kt`, `GameRepository*.kt`, `GamePhasePolicy.kt` | 49 |
+| **엠키** | 게임 화면·네비게이션 | `main/presentation/navigation/**`, `presentation/start`·`roomcreated`·`join`, `presentation/round/**` | 30 |
+| **앱콩** | 방·보상·공통·검증 | `main/domain/common/**`, `fake/**`, `presentation/lobby/**`, 스탬프·소원권(US6) 전체, 이용 방법(US7), 각 스토리 테스트, quickstart 검증 | 45 |
+
+- 작업 수는 같지 않지만 작업 크기를 감안해 맞췄다. 뭉뭉의 작업은 DTO·매퍼처럼 작은 것이 많고, 엠키의 작업은 화면 하나하나가 크다.
+- **흐름**: US3–US5 기간에 뭉뭉과 엠키는 게임 흐름을 계속 이어 가고, 앱콩은 US6·US7을 병렬로 진행한다.
+
+### 충돌 주의 파일 (파일별 담당 1명)
+
+| 파일 | 담당 | 다른 사람이 고쳐야 할 때 |
+|------|------|-------------------------|
+| `gradle/libs.versions.toml`, `app/build.gradle.kts` | 뭉뭉 | 의존성 추가를 뭉뭉에게 요청한다(T121의 FCM 포함) |
+| `main/data/api/NodeApiService.kt`, `GameRepository*.kt` | 뭉뭉 | — |
+| `main/data/api/SpringApiService.kt` | 뭉뭉 (US1) → 앱콩 (US6) | US1이 머지된 뒤 앱콩에게 넘긴다 |
+| `main/presentation/navigation/HilNavHost.kt`, `RoundNavHost.kt` | 엠키 | 앱콩은 T108·T115를 하기 전에 엠키와 조율한다 |
+| `main/presentation/lobby/**` | 앱콩 | — |
+| `fake/data/fake/FakeServer.kt`, `fake/di/FakeRepositoryModule.kt` | 앱콩 | 뭉뭉·엠키는 PR에 필요한 Fake 동작을 적고, 앱콩이 반영한다 |
+| `res/values/strings.xml` | 해당 문구 작업 담당자 | 스토리별 주석 블록(`<!-- US1 -->` 등) 안에만 추가해 충돌을 줄인다 |
+
+### 동기화 지점
+
+1. **Day 1 오전**: 앱콩이 T007–T010을, 뭉뭉이 T001–T003을 머지한다. 이후 모든 작업이 풀린다.
+2. **Phase 2 종료**: 세 사람이 함께 빌드(`assembleFakeDebug assembleRemoteDebug`)와 테스트를 통과시킨다.
+3. **각 스토리 시작 시**: 뭉뭉이 Repository 인터페이스와 유스케이스 시그니처를 먼저 PR로 올린다. 엠키와 앱콩은 이를 기준으로 Fake 구현과 화면 개발을 병렬로 시작한다.
+4. **US5 종료 (MVP)**: fake 변형으로 한 판 전체 데모. 이 시점에 서버 갭 G1·G2·G3·G8의 반영 여부를 확인한다(서버팀 소통은 뭉뭉이 맡는다).
+
 ---
 
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: 의존성과 빌드 설정, 앱 진입점 준비
+
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T001, T002, T003 |
+| 엠키 (게임 화면·네비게이션) | T004, T005 |
+| 앱콩 (방·보상·공통·검증) | T006 |
+
+> 뭉뭉이 Gradle 파일 3개를 혼자 맡는다. 빌드 파일 충돌을 막기 위해서다. T003이 머지되기 전까지 엠키와 앱콩은 의존성이 필요 없는 리소스·Manifest 작업만 한다.
 
 - [ ] T001 `gradle/libs.versions.toml`에 버전과 라이브러리 별칭을 추가한다. 버전은 Kotlin 2.2.10, AGP 8.10.0과 호환되는 것으로 고른다.
   - 라이브러리: hilt-android/compiler, hilt-navigation-compose, navigation-compose, kotlinx-serialization-json, retrofit, retrofit-kotlinx-serialization converter, okhttp, okhttp-logging-interceptor, datastore-preferences, lifecycle-runtime-compose, lifecycle-viewmodel-compose, lifecycle-process, kotlinx-coroutines-test, turbine, okhttp-mockwebserver
@@ -63,6 +103,16 @@ description: "Task list for 힐끔 MVP Android client"
 **Purpose**: 모든 스토리가 공유하는 결과 타입, 세션, 네트워크, 폴링, 네비게이션 뼈대
 
 **⚠️ CRITICAL**: 이 단계를 마쳐야 사용자 스토리 작업을 시작할 수 있다.
+
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T011, T012, T013, T014, T015, T016, T018, T027, T028 |
+| 엠키 (게임 화면·네비게이션) | T022, T023, T024, T025, T026 |
+| 앱콩 (방·보상·공통·검증) | T007, T008, T009, T010, T017, T019, T020, T021 |
+
+> **앱콩이 T007–T010(도메인 공통 타입)을 첫날 오전에 먼저 머지한다.** 뭉뭉과 엠키는 이 타입을 바로 가져다 쓴다. T020(빌드 변형별 DI 뼈대)과 T021(FakeServer)은 앱콩이 맡아 이후 Fake 구현의 기준을 잡는다.
 
 - [ ] T007 [P] `main/domain/common/AppResult.kt`를 만든다: `sealed interface AppResult<out T>` + `Success` / `Failure(error: AppError)`.
 - [ ] T008 [P] `main/domain/common/AppError.kt`와 `main/domain/common/ErrorReason.kt`를 만든다.
@@ -109,6 +159,16 @@ description: "Task list for 힐끔 MVP Android client"
 
 **Independent Test**: quickstart.md E2E 1단계. 잘못된 코드와 정원 초과 안내를 포함한다.
 
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T029, T030, T031, T032, T033, T034, T036, T037, T045 |
+| 엠키 (게임 화면·네비게이션) | T038, T039, T040, T042, T046 |
+| 앱콩 (방·보상·공통·검증) | T035, T041, T043, T044 |
+
+> 뭉뭉의 T030(Repository 인터페이스)과 T037(유스케이스)을 먼저 머지하면, 엠키와 앱콩은 Fake를 붙여 화면을 병렬로 개발할 수 있다.
+
 - [ ] T029 [P] [US1] `main/domain/model/RoomStatus.kt`(`PENDING` / `ACTIVE`), `main/domain/model/InviteCode.kt`, `main/domain/model/Room.kt`를 만든다.
   - `InviteCode`: 입력을 대문자로 바꾸고 공백을 없앤 뒤 6자리 영숫자인지 검증. 실패하면 `ValidationFailed(INVALID_INVITE_CODE)`
   - `Room`: roomId, status, members, currentGameId?(⚠️G1), 파생 속성 `isPartnerJoined`
@@ -154,6 +214,16 @@ description: "Task list for 힐끔 MVP Android client"
 **Goal**: 방장이 유형·개수를 정해 게임을 만들고, 두 사람이 각자 미션 N개와 벌칙 1개를 고른다. 둘 다 마치면 진행 단계로 넘어간다.
 
 **Independent Test**: quickstart.md E2E 2단계. 상대의 선택이 어떤 화면에도 나타나지 않아야 한다.
+
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T047, T050, T051, T052, T053, T054, T055, T056, T058 |
+| 엠키 (게임 화면·네비게이션) | T060, T061, T062, T063 |
+| 앱콩 (방·보상·공통·검증) | T048, T049, T057, T059, T064, T065, T066, T067 |
+
+> 뭉뭉이 T050(`GamePhasePolicy`)과 T051(`GameRepository` 인터페이스)을 먼저 머지하고, 이어서 앱콩의 T057(Fake)이 들어오면 엠키가 화면을 붙인다. 대기실(T064)은 US1에서 대기실을 만든 앱콩이 계속 맡는다.
 
 - [ ] T047 [P] [US2] 게임 도메인 모델을 만든다.
   - `main/domain/model/DateType.kt`
@@ -211,6 +281,16 @@ description: "Task list for 힐끔 MVP Android client"
 
 **Independent Test**: quickstart.md E2E 3단계. 거절하면 진행 화면으로 돌아가고, 동의하면 추리 단계로 넘어간다.
 
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T068, T069, T070, T071 |
+| 엠키 (게임 화면·네비게이션) | T072, T073, T074 |
+| 앱콩 (방·보상·공통·검증) | — |
+
+> 앱콩은 이 단계부터 US6(Phase 8)을 병렬로 진행한다.
+
 - [ ] T068 [P] [US3] DTO를 만든다: `main/data/dto/game/EndRequestResponseDto.kt`, `EndResponseRequestDto.kt`, `EndResponseResponseDto.kt`.
 - [ ] T069 [US3] `main/data/api/NodeApiService.kt`에 API 10(`POST /games/{gameId}/end-request`)과 11(`POST /games/{gameId}/end-response`)을 추가한다.
 - [ ] T070 [US3] `GameRepository`에 `requestEnd()`, `respondEnd(accepted)`를 추가하고 구현한다. 수정할 파일은 `main/domain/repository/GameRepository.kt`, `main/data/repositoryimpl/GameRepositoryImpl.kt`, `fake/data/fake/FakeGameRepository.kt`다.
@@ -236,6 +316,16 @@ description: "Task list for 힐끔 MVP Android client"
 **Goal**: 미션 수만큼 추리(각 30자)를 한 번에 제출하고, 내 미션 수행 여부 O/X와 받은 추리의 정답 여부 O/X를 제출한다.
 
 **Independent Test**: quickstart.md E2E 4단계. 빈 칸이면 제출할 수 없고, 31자째는 입력되지 않으며, 재시도해도 한 번만 저장된다.
+
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T075, T076, T077, T078, T079, T080 |
+| 엠키 (게임 화면·네비게이션) | T081, T082, T083 |
+| 앱콩 (방·보상·공통·검증) | T084, T085 |
+
+> 앱콩은 US6을 진행하는 사이사이에 검증 테스트를 맡는다.
 
 - [ ] T075 [P] [US4] 모델을 만든다.
   - `main/domain/model/GuessText.kt`: trim 후 1..30자, `BreakIterator`로 grapheme 단위 계산
@@ -277,6 +367,16 @@ description: "Task list for 힐끔 MVP Android client"
 
 **Independent Test**: quickstart.md E2E 5단계. 40 대 35로 A 승리, 동점이면 가위바위보, 비기면 다시 한다.
 
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T086, T087, T088, T089, T090, T091 |
+| 엠키 (게임 화면·네비게이션) | T092, T093, T094, T096 |
+| 앱콩 (방·보상·공통·검증) | T095 |
+
+> 이 단계가 끝나면 MVP 데모를 할 수 있다. 세 사람이 함께 fake 변형으로 한 판을 끝까지 돌려 본다.
+
 - [ ] T086 [P] [US5] 모델을 만든다.
   - `main/domain/model/Settlement.kt`: decidedBy, winner, myScore, partnerScore, penalty, reveal?(⚠️G5), 파생 속성 isMyWin
   - `main/domain/model/RpsChoice.kt`
@@ -310,6 +410,16 @@ description: "Task list for 힐끔 MVP Android client"
 **Goal**: 스탬프 n/3 표시 → 3개면 교환 → 소원권 D-day 표시 → 사용 요청 → 상대가 승인하면 소진, 거절하면 다시 보유.
 
 **Independent Test**: quickstart.md E2E 6단계.
+
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | — |
+| 엠키 (게임 화면·네비게이션) | T109 |
+| 앱콩 (방·보상·공통·검증) | T097, T098, T099, T100, T101, T102, T103, T104, T105, T106, T107, T108, T110, T111, T112 |
+
+> US3–US5와 병렬로 진행한다(앱콩 주도). 결산 화면 연동인 T109는 결산 화면을 만든 엠키가 US5 이후에 맡는다. 앱콩의 T108은 엠키 담당 파일인 `HilNavHost.kt`를 건드리므로 엠키와 미리 조율한다.
 
 - [ ] T097 [P] [US6] 모델을 만든다.
   - `main/domain/model/StampStatus.kt`: heartCount, maxHearts, canExchange, hasActiveCoupon, 파생 속성 showFullWarning
@@ -360,6 +470,16 @@ description: "Task list for 힐끔 MVP Android client"
 
 **Independent Test**: 대기실에서 ? → 규칙 화면 → 뒤로 가기로 대기실에 돌아온다.
 
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | — |
+| 엠키 (게임 화면·네비게이션) | — |
+| 앱콩 (방·보상·공통·검증) | T113, T114, T115 |
+
+> US6과 겹치지 않는 틈에 앱콩이 진행한다.
+
 - [ ] T113 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙.
 - [ ] T114 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다.
 - [ ] T115 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다.
@@ -369,6 +489,16 @@ description: "Task list for 힐끔 MVP Android client"
 ## Phase 10: Polish & Cross-Cutting Concerns
 
 **Purpose**: 서버 갭 연동, 품질, 통합 검증
+
+**👥 담당**:
+
+| 담당 | 작업 |
+|------|------|
+| 뭉뭉 (데이터·도메인) | T120, T121, T123 |
+| 엠키 (게임 화면·네비게이션) | T118, T119, T122 |
+| 앱콩 (방·보상·공통·검증) | T116, T117, T124 |
+
+> T124(quickstart 전체 검증)는 앱콩이 주도하고 세 사람이 기기 2대로 함께 수행한다.
 
 - [ ] T116 [P] `fake/presentation/debug/FakePartnerPanel.kt`를 만든다. fake 변형에서만 보이는 디버그 오버레이로, 파트너 입장·선택 완료·종료 요청/응답·추리·채점·가위바위보·소원권 승인/거절을 버튼으로 실행한다(research R12).
 - [ ] T117 `main/presentation/lobby/LobbyViewModel.kt`를 고친다. `CANCELLED` phase를 받으면 취소 안내 event를 한 번 내보내고, 방장의 '미션 시작'을 다시 활성화한다(FR-052b, ⚠️G12 서버 반영 전에는 fake에서만 확인).
@@ -470,7 +600,14 @@ T097 모델 | T098 Repository | T099 DTO | T101 Mapper | T103 Fake
 
 US1 → US2 → US3 → US4 → US5(MVP 완성) → US6(보상) → US7(도움말) → 푸시(G11 서버 준비 후)
 
-### 병렬 팀 구성 예 (개발자 2명)
+### 팀 진행 순서 (개발자 3명)
 
-- **A**: Foundational → US1 → US2 → US3 → US4 → US5 (게임 흐름)
-- **B**: Foundational 일부(T022, T023) → US7 → US6 → T116 Fake 디버그 패널 → T118 UI 흐름 테스트
+자세한 내용은 위 "역할 분담" 섹션과 각 Phase의 **👥 담당** 표를 따른다.
+
+| 기간 | 뭉뭉 | 엠키 | 앱콩 |
+|------|---|---|---|
+| Setup·Foundational | Gradle, 세션, 네트워크, 폴링 | 공통 UI, Route, NavHost | 도메인 공통 타입, DI 뼈대, FakeServer |
+| US1 | 방 데이터 계층 | 시작·방 생성·코드 입력 화면 | Fake 방, 대기실 |
+| US2 | 게임 데이터 계층, `GamePhasePolicy` | RoundNavHost, 설정·선택 화면 | 카탈로그 모델, Fake 게임, 대기실 연동, 정책 테스트 |
+| US3–US5 | 종료·추리·채점·결산·가위바위보 데이터 | 진행·추리·채점·가위바위보·결산 화면 | **US6 스탬프·소원권 전체**, US7, 검증 테스트 |
+| Polish | 로그 점검, FCM(G11), 서버 갭 반영 | UI 흐름 테스트, 접근성, 딥링크 | Fake 디버그 패널, 취소 처리, quickstart 검증 |
