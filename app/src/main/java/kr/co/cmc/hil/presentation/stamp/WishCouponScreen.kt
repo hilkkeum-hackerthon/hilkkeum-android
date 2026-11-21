@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kr.co.cmc.hil.R
 import kr.co.cmc.hil.domain.model.StampsPerWish
 import kr.co.cmc.hil.domain.model.WishStampProgress
@@ -60,11 +61,9 @@ private const val RoadOrigin = 136f
 private const val CycleSpacing = 690f
 
 @Composable
-internal fun WishCouponScreen(
-    progress: WishStampProgress,
-    onHome: () -> Unit,
-    onUse: () -> Unit,
-) {
+internal fun WishCouponScreen(viewModel: WishCouponViewModel, onHome: () -> Unit) {
+    val progress by viewModel.uiState.collectAsStateWithLifecycle()
+
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var showTicket by rememberSaveable { mutableStateOf(false) }
 
@@ -80,7 +79,7 @@ internal fun WishCouponScreen(
             onDismiss = { showTicket = false },
             onUse = {
                 showTicket = false
-                onUse()
+                viewModel.onAction(WishCouponAction.UseWish)
             },
         )
     }

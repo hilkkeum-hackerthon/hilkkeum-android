@@ -3,10 +3,6 @@ package kr.co.cmc.hil.presentation
 import android.content.pm.ApplicationInfo
 import android.widget.Toast
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
@@ -14,7 +10,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kr.co.cmc.hil.R
-import kr.co.cmc.hil.domain.model.WishStampProgress
 import kr.co.cmc.hil.presentation.entrance.EntranceScreen
 import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
 import kr.co.cmc.hil.presentation.invitation.InvitationScreen
@@ -24,6 +19,7 @@ import kr.co.cmc.hil.presentation.quest.QuestModeScreen
 import kr.co.cmc.hil.presentation.quest.QuestPenaltyScreen
 import kr.co.cmc.hil.presentation.quest.QuestSelectionScreen
 import kr.co.cmc.hil.presentation.stamp.WishCouponScreen
+import kr.co.cmc.hil.presentation.stamp.WishCouponViewModel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -53,12 +49,9 @@ private data class QuestSelectionRoute(val mode: QuestMode, val missionCount: In
 @Serializable
 private data class QuestPenaltyRoute(val mode: QuestMode, val missionIds: List<Int>)
 
-private val SampleStampDates = listOf("2026.01.21", "2026.01.24", "2026.01.24")
-
 @Composable
-fun HilkkeumNavHost() {
+internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
     val navigation = rememberNavController()
-    var usedWishes by rememberSaveable { mutableIntStateOf(0) }
     val appFlags = LocalContext.current.applicationInfo.flags
     val isDebuggable = (appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     val startDestination = if (isDebuggable) TemporaryHomeRoute else EntranceRoute
@@ -70,11 +63,9 @@ fun HilkkeumNavHost() {
             )
         }
         composable<WishCouponRoute> {
-            val progress = WishStampProgress(SampleStampDates, usedWishes)
             WishCouponScreen(
-                progress = progress,
+                viewModel = wishCouponViewModel,
                 onHome = { navigation.popBackStack() },
-                onUse = { usedWishes = progress.useWish().usedWishes },
             )
         }
         composable<EntranceRoute> {
