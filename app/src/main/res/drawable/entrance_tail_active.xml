@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma basic frame 21:1245 Vector 3 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18.6025dp"
+    android:height="63.0006dp"
+    android:viewportWidth="18.6025"
+    android:viewportHeight="63.0006">
+    <path
+        android:pathData="M3.91443 1.50015C1.58109 20.5002 -3.89788 54.0002 17.1021 61.5002"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeColor="#FF652F" />
+</vector>

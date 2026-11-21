@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma basic frame 21:1245 Subtract -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <path
+        android:fillColor="#FF652F"
+        android:pathData="M18 0C27.9411 0 36 8.05887 36 18C36 27.9411 27.9411 36 18 36C8.05887 36 0 27.9411 0 18C0 8.05887 8.05887 0 18 0ZM18 11.5195C14.4212 11.5195 11.5195 14.4212 11.5195 18C11.5195 21.5788 14.4212 24.4805 18 24.4805C21.5788 24.4805 24.4805 21.5788 24.4805 18C24.4805 14.4212 21.5788 11.5195 18 11.5195Z" />
+</vector>
