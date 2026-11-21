@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kr.co.cmc.hil.domain.repository.RoomRepository
 import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
+import kr.co.cmc.hil.domain.usecase.room.JoinRoomUseCase
 import javax.inject.Singleton
 
 /**
@@ -28,4 +29,9 @@ object UseCaseModule {
     @Singleton
     fun provideCreateRoomUseCase(repository: RoomRepository): CreateRoomUseCase =
         CreateRoomUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideJoinRoomUseCase(repository: RoomRepository): JoinRoomUseCase =
+        JoinRoomUseCase(repository)
 }
