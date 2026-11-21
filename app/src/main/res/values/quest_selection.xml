@@ -1,0 +1,8 @@
+<resources>
+    <string name="quest_selection_title">수행할 미션을 정해주세요.</string>
+    <string name="quest_selection_progress">퀘스트 설정 3단계 중 3단계</string>
+    <string name="quest_selection_sample">미션 %d 고르기</string>
+    <string name="quest_selection_required">미션을 %d개 선택해 주세요.</string>
+    <color name="quest_selection_inactive">#434343</color>
+    <color name="quest_selection_text">#ECECEC</color>
+</resources>

@@ -4,11 +4,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kr.co.cmc.hil.domain.repository.RoomRepository
-import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
-import kr.co.cmc.hil.domain.usecase.room.GetRoomUseCase
-import kr.co.cmc.hil.domain.usecase.room.JoinRoomUseCase
-import javax.inject.Singleton
+import kr.co.cmc.hil.domain.repository.WishStampRepository
+import kr.co.cmc.hil.domain.usecase.GetWishStampProgressUseCase
 
 /**
  * UseCase 인스턴스를 제공한다.
@@ -24,20 +21,8 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object UseCaseModule {
-
+internal object UseCaseModule {
     @Provides
-    @Singleton
-    fun provideCreateRoomUseCase(repository: RoomRepository): CreateRoomUseCase =
-        CreateRoomUseCase(repository)
-
-    @Provides
-    @Singleton
-    fun provideJoinRoomUseCase(repository: RoomRepository): JoinRoomUseCase =
-        JoinRoomUseCase(repository)
-
-    @Provides
-    @Singleton
-    fun provideGetRoomUseCase(repository: RoomRepository): GetRoomUseCase =
-        GetRoomUseCase(repository)
+    fun provideGetWishStampProgressUseCase(repository: WishStampRepository): GetWishStampProgressUseCase =
+        GetWishStampProgressUseCase(repository)
 }

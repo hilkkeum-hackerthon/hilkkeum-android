@@ -1,0 +1,15 @@
+<resources>
+    <string name="quest_mode_title">오늘은 어떤 시간을 가지실 건가요?</string>
+    <string name="quest_mode_together">만나서 데이트\n할 거예요</string>
+    <string name="quest_mode_apart">따로 시간\n보낼 거예요</string>
+    <string name="quest_mode_next">다음</string>
+    <string name="quest_mode_progress">퀘스트 설정 3단계 중 1단계</string>
+    <string name="quest_mode_choose">먼저 만남 방식을 선택해 주세요.</string>
+    <string name="quest_mode_next_pending">다음 설정 단계는 준비 중이에요.</string>
+    <color name="quest_mode_title">#FEFAE6</color>
+    <color name="quest_mode_card_text">#FAFAFA</color>
+    <color name="quest_mode_together_base">#4D6EFF</color>
+    <color name="quest_mode_together_light">#ADBCFF</color>
+    <color name="quest_mode_apart_base">#31D586</color>
+    <color name="quest_mode_apart_light">#9DFFD0</color>
+</resources>
