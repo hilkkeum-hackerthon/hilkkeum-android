@@ -37,7 +37,6 @@ class MainActivity : ComponentActivity() {
                     couponApprovalViewModel = couponApprovalViewModel,
                     roomEntryViewModel = roomEntryViewModel,
                     gameSetupViewModel = gameSetupViewModel,
-                    onClose = ::finish,
                 )
             }
         }

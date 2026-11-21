@@ -27,6 +27,7 @@ import kr.co.cmc.hil.domain.usecase.game.SubmitGuessesUseCase
 import kr.co.cmc.hil.domain.usecase.mission.GetMissionsUseCase
 import kr.co.cmc.hil.domain.usecase.mission.GetPenaltiesUseCase
 import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
+import kr.co.cmc.hil.domain.usecase.room.DeleteRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.GetRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.JoinRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.RoomSessionUseCase
@@ -52,6 +53,11 @@ internal object UseCaseModule {
     @Singleton
     fun provideCreateRoomUseCase(repository: RoomRepository): CreateRoomUseCase =
         CreateRoomUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideDeleteRoomUseCase(repository: RoomRepository): DeleteRoomUseCase =
+        DeleteRoomUseCase(repository)
 
     @Provides
     @Singleton

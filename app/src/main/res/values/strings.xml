@@ -4,6 +4,7 @@
     <string name="room_status_failed">방 상태를 확인하지 못했어요. 다시 확인할게요.</string>
     <string name="room_request_failed">요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.</string>
     <string name="room_session_expired">이 방에 다시 연결할 수 없어요.</string>
+    <string name="room_leave_failed">방을 나가지 못했어요. 다시 시도해 주세요.</string>
     <string name="room_server_missing">서버 주소가 설정되지 않았어요.</string>
     <string name="room_full">이미 두 사람이 입장한 방이에요.</string>
     <string name="invitation_copied">복사되었습니다.</string>

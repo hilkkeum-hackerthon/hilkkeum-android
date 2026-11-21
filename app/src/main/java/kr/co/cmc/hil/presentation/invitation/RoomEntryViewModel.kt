@@ -13,6 +13,7 @@ import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.common.map
 import kr.co.cmc.hil.domain.model.room.RoomSession
 import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
+import kr.co.cmc.hil.domain.usecase.room.DeleteRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.GetRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.JoinRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.RoomSessionUseCase
@@ -21,6 +22,7 @@ import kr.co.cmc.hil.presentation.common.MviViewModel
 internal data class RoomEntryUiState(
     val isRestoring: Boolean = true,
     val isSubmitting: Boolean = false,
+    val isLeaving: Boolean = false,
     val session: RoomSession? = null,
     val isPaired: Boolean = false,
     val statusError: Int? = null,
@@ -30,6 +32,9 @@ internal sealed interface RoomEntryAction {
     data object Create : RoomEntryAction
     data class Join(val code: String) : RoomEntryAction
     data class ObserveStatus(val observing: Boolean) : RoomEntryAction
+
+    /** 상대가 들어오기 전 방장이 초대 화면에서 뒤로 가면 방을 삭제하고 첫 화면으로 돌아간다. */
+    data object Leave : RoomEntryAction
 }
 
 private const val RoomStatusPollIntervalMillis = 3_000L
@@ -39,6 +44,7 @@ internal class RoomEntryViewModel @Inject constructor(
     private val createRoom: CreateRoomUseCase,
     private val joinRoom: JoinRoomUseCase,
     private val getRoom: GetRoomUseCase,
+    private val deleteRoom: DeleteRoomUseCase,
     private val roomSession: RoomSessionUseCase,
 ) : MviViewModel<RoomEntryUiState, RoomEntryAction, Int>(RoomEntryUiState()) {
     private var statusJob: Job? = null
@@ -63,6 +69,7 @@ internal class RoomEntryViewModel @Inject constructor(
             is RoomEntryAction.Join -> submit {
                 joinRoom(action.code.trim()).map { RoomSession(it.roomId, null) }
             }
+            RoomEntryAction.Leave -> leave()
             is RoomEntryAction.ObserveStatus -> {
                 statusJob?.cancel()
                 statusJob = if (action.observing) viewModelScope.launch { observeStatus() } else null
@@ -70,9 +77,37 @@ internal class RoomEntryViewModel @Inject constructor(
         }
     }
 
+    private suspend fun executeLeave(session: RoomSession) {
+        val result = deleteRoom(session.roomId)
+
+        when (result) {
+            is AppResult.Success -> updateState {
+                it.copy(isLeaving = false, session = null, isPaired = false, statusError = null)
+            }
+            is AppResult.Error -> {
+                updateState { it.copy(isLeaving = false) }
+                emitEvent(R.string.room_leave_failed)
+            }
+        }
+    }
+
+    private fun leave() {
+        val state = uiState.value
+        val session = state.session
+
+        if (state.isLeaving || session == null || session.inviteCode == null || state.isPaired) {
+            // 나가는 중이거나, 방장이 상대를 기다리는 상태가 아니다.
+        } else {
+            statusJob?.cancel()
+            statusJob = null
+            updateState { it.copy(isLeaving = true) }
+            viewModelScope.launch { executeLeave(session) }
+        }
+    }
+
     private fun submit(request: suspend () -> AppResult<RoomSession, AppError.Network>) {
         val state = uiState.value
-        if (state.isRestoring || state.isSubmitting || state.session != null) return
+        if (state.isRestoring || state.isSubmitting || state.isLeaving || state.session != null) return
         updateState { it.copy(isSubmitting = true) }
         viewModelScope.launch {
             try {
