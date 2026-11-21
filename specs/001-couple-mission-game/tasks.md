@@ -484,9 +484,9 @@ description: "Task list for 힐끔 MVP Android client"
 
 > 화면 전용 단계라 뭉뭉만 작업한다. US6 화면 사이사이에 진행한다.
 
-- [ ] T118 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙.
-- [ ] T119 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다.
-- [ ] T120 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다.
+- [X] T118 [P] [US7] `res/values/strings.xml`에 게임 규칙 문구를 추가한다: 미션·관찰·추리·점수(15점/10점)·벌칙·스탬프 규칙. ✅ 구현: `res/values/howto.xml` (미션·관찰·추리·채점과 점수 15/10점·벌칙·스탬프와 소원권)
+- [X] T119 [US7] `main/presentation/howto/HowToScreen.kt`를 만든다. 상태가 없는 단순 화면이라 ViewModel은 생략할 수 있다(RULES §9). 뒤로 가기 버튼을 둔다. ✅ 구현: `presentation/howto/HowToScreen.kt` (Screen + private Content, ViewModel 생략, 뒤로 가기 버튼)
+- [X] T120 [US7] `main/presentation/navigation/HilNavHost.kt`에 `HowToRoute`를 연결하고, `main/presentation/lobby/LobbyScreen.kt`의 ? 아이콘에서 이동하게 한다. ✅ 구현: `HilkkeumNavHost`에 `HowToRoute` 연결. 대기실(`TemporaryHomeScreen`)의 ? 아이콘이 기존 인라인 도움말 대신 이용 방법 화면으로 이동
 
 ---
 
