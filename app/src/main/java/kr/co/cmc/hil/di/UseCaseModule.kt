@@ -4,9 +4,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.domain.repository.GameRepository
 import kr.co.cmc.hil.domain.repository.RoomRepository
 import kr.co.cmc.hil.domain.repository.WishStampRepository
 import kr.co.cmc.hil.domain.usecase.GetWishStampProgressUseCase
+import kr.co.cmc.hil.domain.usecase.game.CreateGameUseCase
+import kr.co.cmc.hil.domain.usecase.game.GetGameUseCase
 import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.GetRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.JoinRoomUseCase
@@ -45,4 +48,14 @@ internal object UseCaseModule {
     @Singleton
     fun provideGetRoomUseCase(repository: RoomRepository): GetRoomUseCase =
         GetRoomUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideCreateGameUseCase(repository: GameRepository): CreateGameUseCase =
+        CreateGameUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetGameUseCase(repository: GameRepository): GetGameUseCase =
+        GetGameUseCase(repository)
 }

@@ -4,8 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kr.co.cmc.hil.data.repositoryimpl.GameRepositoryImpl
 import kr.co.cmc.hil.data.repositoryimpl.RoomRepositoryImpl
 import kr.co.cmc.hil.data.repositoryimpl.SampleWishStampRepository
+import kr.co.cmc.hil.domain.repository.GameRepository
 import kr.co.cmc.hil.domain.repository.RoomRepository
 import kr.co.cmc.hil.domain.repository.WishStampRepository
 import javax.inject.Singleton
@@ -30,6 +32,10 @@ internal abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRoomRepository(impl: RoomRepositoryImpl): RoomRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGameRepository(impl: GameRepositoryImpl): GameRepository
 
     @Binds
     abstract fun bindWishStampRepository(implementation: SampleWishStampRepository): WishStampRepository
