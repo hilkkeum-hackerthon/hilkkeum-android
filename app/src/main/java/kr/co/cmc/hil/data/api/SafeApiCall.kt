@@ -38,6 +38,12 @@ suspend inline fun <reified T> safeApiCall(
     }
 }
 
+/**
+ * HTTP 상태 코드에 따라 [AppResult]로 변환한다.
+ * 2xx는 본문을 [T]로 파싱해 성공으로, 그 외는 대응하는 [AppError.Network]로 반환한다.
+ *
+ * public inline 함수인 [safeApiCall]에서 호출하기 위해 `@PublishedApi`로 선언했다.
+ */
 @PublishedApi
 internal suspend inline fun <reified T> responseToResult(
     response: HttpResponse,
