@@ -30,6 +30,7 @@ fun RoomResponseDto.toDomain(): Room = Room(
     roomId = RoomId(roomId),
     memberCount = memberCount,
     capacity = capacity,
+    currentGameId = currentGameId,
     members = members.map { it.toDomain() },
 )
 

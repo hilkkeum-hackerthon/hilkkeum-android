@@ -10,6 +10,7 @@ data class RoomResponseDto(
     val roomId: Long,
     val memberCount: Int,
     val capacity: Int,
+    val currentGameId: Long? = null,
     val members: List<RoomMemberDto>,
 )
 

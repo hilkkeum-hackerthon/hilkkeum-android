@@ -43,6 +43,7 @@ fun CreateGameResponseDto.toDomain(): CreatedGame = CreatedGame(
     roomId = RoomId(roomId),
     dateType = dateType.toDomain(),
     missionCount = missionCount,
+    status = status,
 )
 
 /**
@@ -52,6 +53,7 @@ fun GameResponseDto.toDomain(): Game = Game(
     gameId = GameId(gameId),
     dateType = dateType.toDomain(),
     missionCount = missionCount,
+    status = status,
     mySelectionCompleted = mySelectionCompleted,
     partnerSelectionCompleted = partnerSelectionCompleted,
     endRequestPending = endRequestPending,

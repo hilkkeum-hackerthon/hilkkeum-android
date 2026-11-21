@@ -11,4 +11,5 @@ data class CreateGameResponseDto(
     val roomId: Long,
     val dateType: DateTypeDto,
     val missionCount: Int,
+    val status: String,
 )

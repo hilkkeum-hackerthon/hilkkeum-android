@@ -1,12 +1,21 @@
 package kr.co.cmc.hil.presentation
 
-import android.content.pm.ApplicationInfo
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -18,6 +27,11 @@ import kr.co.cmc.hil.R
 import kr.co.cmc.hil.presentation.entrance.EntranceScreen
 import kr.co.cmc.hil.presentation.home.TemporaryHomeScreen
 import kr.co.cmc.hil.presentation.invitation.InvitationScreen
+import kr.co.cmc.hil.presentation.invitation.RoomEntryAction
+import kr.co.cmc.hil.presentation.invitation.RoomEntryViewModel
+import kr.co.cmc.hil.presentation.quest.GameSetupAction
+import kr.co.cmc.hil.presentation.quest.GameSetupEvent
+import kr.co.cmc.hil.presentation.quest.GameSetupViewModel
 import kr.co.cmc.hil.presentation.quest.QuestCountScreen
 import kr.co.cmc.hil.presentation.quest.QuestMode
 import kr.co.cmc.hil.presentation.quest.QuestModeScreen
@@ -53,13 +67,13 @@ internal object QuestModeRoute
 private data class QuestCountRoute(val mode: QuestMode)
 
 @Serializable
-private data class QuestSelectionRoute(val mode: QuestMode, val missionCount: Int)
+private data class QuestSelectionRoute(val gameId: Long, val missionCount: Int)
 
 @Serializable
-private data class QuestPenaltyRoute(val mode: QuestMode, val missionIds: List<Int>)
+private data class QuestPenaltyRoute(val gameId: Long, val missionIds: List<Int>)
 
 @Serializable
-private data class OperationWaitingRoute(val missionIds: List<Int>, val penaltyId: Int)
+private data class OperationWaitingRoute(val gameId: Long, val missionIds: List<Int>, val penaltyId: Int)
 
 @Serializable
 private data class OperationProgressRoute(val missionIds: List<Int>, val penaltyId: Int)
@@ -74,10 +88,60 @@ private const val SubmittedMissionGuessesKey = "submittedMissionGuesses"
 private const val MissionJudgementsKey = "missionJudgements"
 
 @Composable
-internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
+internal fun HilkkeumNavHost(
+    wishCouponViewModel: WishCouponViewModel,
+    roomEntryViewModel: RoomEntryViewModel,
+    gameSetupViewModel: GameSetupViewModel,
+    onClose: () -> Unit,
+) {
+    val room by roomEntryViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    LaunchedEffect(roomEntryViewModel, context) {
+        roomEntryViewModel.event.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
+    if (room.isRestoring) {
+        RoomStatusScreen()
+        return
+    }
     val navigation = rememberNavController()
-    val appFlags = LocalContext.current.applicationInfo.flags
-    val isDebuggable = (appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    val game by gameSetupViewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(navigation, gameSetupViewModel, context) {
+        gameSetupViewModel.event.collect { event ->
+            when (event) {
+                is GameSetupEvent.OpenSelection -> {
+                    if (navigation.currentDestination?.hasRoute<QuestCountRoute>() == true) {
+                        navigation.navigate(QuestSelectionRoute(event.gameId, event.count)) {
+                            popUpTo<QuestModeRoute> { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+                is GameSetupEvent.ShowMessage ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    LaunchedEffect(room.session, room.isPaired) {
+        val destination = navigation.currentDestination
+        if (room.session == null) {
+            if (destination?.hasRoute<EntranceRoute>() == false &&
+                !destination.hasRoute<EnterInvitationRoute>()
+            ) {
+                navigation.navigate(EntranceRoute) {
+                    popUpTo(navigation.graph.id)
+                    launchSingleTop = true
+                }
+            }
+        } else if (room.isPaired) {
+            if (destination?.hasRoute<ShareInvitationRoute>() == true ||
+                destination?.hasRoute<EntranceRoute>() == true
+            ) {
+                navigation.navigate(TemporaryHomeRoute) { popUpTo(navigation.graph.id) }
+            }
+        } else if (destination?.hasRoute<ShareInvitationRoute>() != true) {
+            navigation.navigate(ShareInvitationRoute) { popUpTo(navigation.graph.id) }
+        }
+    }
     NavHost(navigation, startDestination = EntranceRoute) {
         composable<TemporaryHomeRoute> {
             TemporaryHomeScreen(
@@ -94,30 +158,36 @@ internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
         composable<EntranceRoute> {
             EntranceScreen(
                 onEnterInviteCode = { navigation.navigate(EnterInvitationRoute) },
-                onCreateRoom = { navigation.navigate(ShareInvitationRoute) },
+                onCreateRoom = { roomEntryViewModel.onAction(RoomEntryAction.Create) },
             )
         }
         composable<EnterInvitationRoute> {
-            val sampleCode = stringResource(R.string.invitation_sample_code)
             InvitationScreen(
                 onBack = { navigation.popBackStack() },
-                onJoin = if (isDebuggable) ({ input ->
-                    val matches = input.trim().equals(sampleCode, ignoreCase = true)
-                    if (matches) {
-                        navigation.navigate(TemporaryHomeRoute) {
-                            popUpTo<EnterInvitationRoute> { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                    matches
-                }) else null,
+                isSubmitting = room.isSubmitting,
+                onJoin = { roomEntryViewModel.onAction(RoomEntryAction.Join(it)) },
             )
         }
         composable<ShareInvitationRoute> {
-            InvitationScreen(
-                onBack = { navigation.popBackStack() },
-                shareCode = stringResource(R.string.invitation_sample_code),
-            )
+            val session = room.session
+            if (session != null) {
+                LifecycleStartEffect(session.roomId) {
+                    roomEntryViewModel.onAction(RoomEntryAction.ObserveStatus(true))
+                    onStopOrDispose {
+                        roomEntryViewModel.onAction(RoomEntryAction.ObserveStatus(false))
+                    }
+                }
+                val message = stringResource(room.statusError ?: R.string.room_waiting_for_partner)
+                if (session.inviteCode != null) {
+                    InvitationScreen(
+                        onBack = onClose,
+                        shareCode = session.inviteCode,
+                        waitingMessage = message,
+                    )
+                } else {
+                    RoomStatusScreen(message)
+                }
+            }
         }
         composable<QuestModeRoute> {
             QuestModeScreen(onNext = { mode ->
@@ -126,36 +196,39 @@ internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
         }
         composable<QuestCountRoute> { entry ->
             val mode = entry.toRoute<QuestCountRoute>().mode
-            QuestCountScreen(onNext = { count ->
-                navigation.navigate(QuestSelectionRoute(mode, count)) { launchSingleTop = true }
+            QuestCountScreen(isSubmitting = game.isLoading, onNext = { count ->
+                room.session?.let { gameSetupViewModel.onAction(GameSetupAction.Continue(it, mode, count)) }
             })
         }
         composable<QuestSelectionRoute> { entry ->
             val route = entry.toRoute<QuestSelectionRoute>()
             QuestSelectionScreen(missionCount = route.missionCount, onNext = { missionIds ->
-                navigation.navigate(QuestPenaltyRoute(route.mode, missionIds)) { launchSingleTop = true }
+                navigation.navigate(QuestPenaltyRoute(route.gameId, missionIds)) { launchSingleTop = true }
             })
         }
         composable<QuestPenaltyRoute> { entry ->
             val route = entry.toRoute<QuestPenaltyRoute>()
             QuestPenaltyScreen(onNext = { penaltyId ->
-                navigation.navigate(OperationWaitingRoute(route.missionIds, penaltyId)) {
+                navigation.navigate(OperationWaitingRoute(route.gameId, route.missionIds, penaltyId)) {
                     launchSingleTop = true
                 }
             })
         }
         composable<OperationWaitingRoute> { entry ->
             val route = entry.toRoute<OperationWaitingRoute>()
-            var isPartnerReady by rememberSaveable { mutableStateOf(false) }
+            LifecycleStartEffect(route.gameId) {
+                gameSetupViewModel.onAction(GameSetupAction.Observe(route.gameId))
+                onStopOrDispose { gameSetupViewModel.onAction(GameSetupAction.Observe(null)) }
+            }
             OperationWaitingScreen(
-                isPartnerReady = isPartnerReady,
+                isPartnerReady = game.playingGameId == route.gameId,
+                hasStatusError = game.hasStatusError,
                 onReady = {
                     navigation.navigate(OperationProgressRoute(route.missionIds, route.penaltyId)) {
                         popUpTo<OperationWaitingRoute> { inclusive = true }
                         launchSingleTop = true
                     }
                 },
-                onDebugConfirm = if (isDebuggable) ({ isPartnerReady = true }) else null,
             )
         }
         composable<OperationProgressRoute> { entry ->
@@ -203,5 +276,16 @@ internal fun HilkkeumNavHost(wishCouponViewModel: WishCouponViewModel) {
                 },
             )
         }
+    }
+}
+
+@Composable
+private fun RoomStatusScreen(message: String? = null) {
+    Box(
+        Modifier.fillMaxSize().background(colorResource(R.color.entrance_background)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (message == null) CircularProgressIndicator()
+        else Text(text = message, color = Color.White)
     }
 }

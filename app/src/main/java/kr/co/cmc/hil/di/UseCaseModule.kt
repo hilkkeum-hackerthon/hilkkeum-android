@@ -30,6 +30,7 @@ import kr.co.cmc.hil.domain.usecase.mission.GetPenaltiesUseCase
 import kr.co.cmc.hil.domain.usecase.room.CreateRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.GetRoomUseCase
 import kr.co.cmc.hil.domain.usecase.room.JoinRoomUseCase
+import kr.co.cmc.hil.domain.usecase.room.RoomSessionUseCase
 import kr.co.cmc.hil.domain.usecase.stamp.GetStampsUseCase
 import javax.inject.Singleton
 
@@ -66,6 +67,11 @@ internal object UseCaseModule {
     @Singleton
     fun provideGetRoomUseCase(repository: RoomRepository): GetRoomUseCase =
         GetRoomUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideRoomSessionUseCase(repository: RoomRepository): RoomSessionUseCase =
+        RoomSessionUseCase(repository)
 
     @Provides
     @Singleton
