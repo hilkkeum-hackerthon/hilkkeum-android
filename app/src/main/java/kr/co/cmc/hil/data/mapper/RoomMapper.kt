@@ -2,10 +2,16 @@ package kr.co.cmc.hil.data.mapper
 
 import kr.co.cmc.hil.data.dto.room.CreateRoomResponseDto
 import kr.co.cmc.hil.data.dto.room.JoinRoomResponseDto
+import kr.co.cmc.hil.data.dto.room.MemberRoleDto
+import kr.co.cmc.hil.data.dto.room.RoomMemberDto
+import kr.co.cmc.hil.data.dto.room.RoomResponseDto
 import kr.co.cmc.hil.domain.model.CreatedRoom
 import kr.co.cmc.hil.domain.model.JoinedRoom
 import kr.co.cmc.hil.domain.model.MemberId
+import kr.co.cmc.hil.domain.model.MemberRole
+import kr.co.cmc.hil.domain.model.Room
 import kr.co.cmc.hil.domain.model.RoomId
+import kr.co.cmc.hil.domain.model.RoomMember
 
 fun CreateRoomResponseDto.toDomain(): CreatedRoom = CreatedRoom(
     roomId = RoomId(roomId),
@@ -19,3 +25,20 @@ fun JoinRoomResponseDto.toDomain(): JoinedRoom = JoinedRoom(
     memberId = MemberId(memberId),
     memberToken = memberToken,
 )
+
+fun RoomResponseDto.toDomain(): Room = Room(
+    roomId = RoomId(roomId),
+    memberCount = memberCount,
+    capacity = capacity,
+    members = members.map { it.toDomain() },
+)
+
+private fun RoomMemberDto.toDomain(): RoomMember = RoomMember(
+    memberId = MemberId(memberId),
+    role = role.toDomain(),
+)
+
+private fun MemberRoleDto.toDomain(): MemberRole = when (this) {
+    MemberRoleDto.CREATOR -> MemberRole.CREATOR
+    MemberRoleDto.JOINER -> MemberRole.JOINER
+}

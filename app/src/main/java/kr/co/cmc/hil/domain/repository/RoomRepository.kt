@@ -4,6 +4,8 @@ import kr.co.cmc.hil.domain.common.AppError
 import kr.co.cmc.hil.domain.common.AppResult
 import kr.co.cmc.hil.domain.model.CreatedRoom
 import kr.co.cmc.hil.domain.model.JoinedRoom
+import kr.co.cmc.hil.domain.model.Room
+import kr.co.cmc.hil.domain.model.RoomId
 
 interface RoomRepository {
 
@@ -17,4 +19,9 @@ interface RoomRepository {
      * 없는 코드는 [AppError.Network.NOT_FOUND], 정원 초과는 [AppError.Network.CONFLICT]로 실패한다.
      */
     suspend fun joinRoom(inviteCode: String): AppResult<JoinedRoom, AppError.Network>
+
+    /**
+     * 방 정보와 상대 입장 여부를 조회한다. 방이 없으면 [AppError.Network.NOT_FOUND]로 실패한다.
+     */
+    suspend fun getRoom(roomId: RoomId): AppResult<Room, AppError.Network>
 }
